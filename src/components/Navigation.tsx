@@ -2,6 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Menu, X, ShoppingCart } from "lucide-react";
 import { Button } from "./ui/button";
+import { LanguageSwitch } from "./LanguageSwitch";
+import { useLanguage } from "@/contexts/LanguageContext";
 import logo from "@/assets/logo.png";
 import {
   NavigationMenu,
@@ -15,6 +17,7 @@ import {
 export const Navigation = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -27,35 +30,35 @@ export const Navigation = () => {
             <img 
               src={logo} 
               alt="Ricos Tacos" 
-              className="h-12 w-12 transition-transform group-hover:scale-105"
+              className="h-16 w-16 md:h-20 md:w-20 transition-transform group-hover:scale-105"
             />
-            <span className="font-serif text-2xl md:text-3xl font-bold tracking-tight text-primary group-hover:text-primary/80 transition-colors">
+            <span className="hidden sm:block font-serif text-2xl md:text-3xl font-bold tracking-tight text-primary group-hover:text-primary/80 transition-colors">
               Ricos Tacos
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
                   <Link to="/">
                     <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-colors ${isActive("/") ? "text-primary" : "text-foreground hover:text-primary"}`}>
-                      Home
+                      {t("nav.home")}
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-sm">Comida</NavigationMenuTrigger>
+                  <NavigationMenuTrigger className="text-sm">{t("nav.comida")}</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4">
                       <li>
                         <Link to="/menu">
                           <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Full Menu</div>
+                            <div className="text-sm font-medium leading-none">{t("nav.fullMenu")}</div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Browse our complete selection of authentic dishes
+                              {t("nav.menuDesc")}
                             </p>
                           </NavigationMenuLink>
                         </Link>
@@ -63,9 +66,9 @@ export const Navigation = () => {
                       <li>
                         <Link to="/location">
                           <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Hours & Location</div>
+                            <div className="text-sm font-medium leading-none">{t("nav.hoursLocation")}</div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Visit us in Brooklyn
+                              {t("nav.hoursDesc")}
                             </p>
                           </NavigationMenuLink>
                         </Link>
@@ -77,7 +80,7 @@ export const Navigation = () => {
                 <NavigationMenuItem>
                   <Link to="/order">
                     <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-colors ${isActive("/order") ? "text-primary" : "text-foreground hover:text-primary"}`}>
-                      Order Online
+                      {t("nav.orderOnline")}
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
@@ -85,12 +88,14 @@ export const Navigation = () => {
                 <NavigationMenuItem>
                   <Link to="/location">
                     <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-colors ${isActive("/location") ? "text-primary" : "text-foreground hover:text-primary"}`}>
-                      Location
+                      {t("nav.location")}
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
+
+            <LanguageSwitch />
 
             <Link to="/cart">
               <Button variant="outline" size="icon" className="relative">
@@ -118,36 +123,39 @@ export const Navigation = () => {
                 className={`text-sm font-medium ${isActive("/") ? "text-primary" : "text-foreground"}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Home
+                {t("nav.home")}
               </Link>
               <Link
                 to="/menu"
                 className={`text-sm font-medium ${isActive("/menu") ? "text-primary" : "text-foreground"}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Full Menu
+                {t("nav.fullMenu")}
               </Link>
               <Link
                 to="/order"
                 className={`text-sm font-medium ${isActive("/order") ? "text-primary" : "text-foreground"}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Order Online
+                {t("nav.orderOnline")}
               </Link>
               <Link
                 to="/location"
                 className={`text-sm font-medium ${isActive("/location") ? "text-primary" : "text-foreground"}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Hours & Location
+                {t("nav.location")}
               </Link>
               <Link
                 to="/cart"
                 className="text-sm font-medium text-foreground"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Cart
+                {t("nav.cart")}
               </Link>
+              <div className="pt-2">
+                <LanguageSwitch />
+              </div>
             </div>
           </div>
         )}

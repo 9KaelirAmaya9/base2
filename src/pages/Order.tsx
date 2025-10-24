@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CartItem {
   id: string;
@@ -16,6 +17,7 @@ interface CartItem {
 }
 
 const Order = () => {
+  const { t } = useLanguage();
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("pickup");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -36,7 +38,7 @@ const Order = () => {
       }
       return [...prevCart, { ...item, quantity: 1 }];
     });
-    toast.success(`${item.name} added to cart`);
+    toast.success(`${item.name} ${t("menu.addToCart")}`);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -55,10 +57,10 @@ const Order = () => {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast.error("Your cart is empty");
+      toast.error(t("order.cartEmpty"));
       return;
     }
-    toast.success(`Order placed for ${orderType}!`);
+    toast.success(`${t("order.placed")} ${orderType}!`);
     setCart([]);
   };
 
@@ -71,17 +73,17 @@ const Order = () => {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6">
-              Order <span className="text-primary">Online</span>
+              {t("order.title")} <span className="text-primary">{t("order.titleHighlight")}</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Choose pickup or delivery and start building your order
+              {t("order.subtitle")}
             </p>
 
             {/* Order Type Selection */}
             <Tabs value={orderType} onValueChange={(v) => setOrderType(v as "pickup" | "delivery")} className="max-w-md mx-auto">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="pickup">Pickup</TabsTrigger>
-                <TabsTrigger value="delivery">Delivery</TabsTrigger>
+                <TabsTrigger value="pickup">{t("order.pickup")}</TabsTrigger>
+                <TabsTrigger value="delivery">{t("order.delivery")}</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -91,13 +93,13 @@ const Order = () => {
             <div className="lg:col-span-2 space-y-6">
               {/* Category Filter */}
               <div className="flex items-center gap-4">
-                <label className="text-sm font-medium">Filter by category:</label>
+                <label className="text-sm font-medium">{t("order.filterBy")}</label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All Items</SelectItem>
+                    <SelectItem value="All">{t("order.allItems")}</SelectItem>
                     {menuCategories.map(category => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -137,7 +139,7 @@ const Order = () => {
                         className="w-full mt-4 gap-2"
                       >
                         <Plus className="h-4 w-4" />
-                        Add to Cart
+                        {t("order.addToCart")}
                       </Button>
                     </div>
                   </Card>
@@ -150,7 +152,7 @@ const Order = () => {
               <Card className="p-6 sticky top-32">
                 <div className="flex items-center gap-2 mb-6">
                   <ShoppingCart className="h-5 w-5" />
-                  <h2 className="font-serif text-2xl font-semibold">Your Order</h2>
+                  <h2 className="font-serif text-2xl font-semibold">{t("order.yourOrder")}</h2>
                   {cartCount > 0 && (
                     <span className="ml-auto bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
                       {cartCount}
@@ -161,7 +163,7 @@ const Order = () => {
                 {cart.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>Your cart is empty</p>
+                    <p>{t("order.emptyCart")}</p>
                   </div>
                 ) : (
                   <>
@@ -201,7 +203,7 @@ const Order = () => {
 
                     <div className="space-y-4">
                       <div className="flex justify-between items-center text-lg font-semibold pt-4 border-t border-border">
-                        <span>Total:</span>
+                        <span>{t("order.total")}</span>
                         <span className="text-primary">${cartTotal.toFixed(2)}</span>
                       </div>
 
@@ -210,11 +212,11 @@ const Order = () => {
                         size="lg"
                         onClick={handleCheckout}
                       >
-                        Proceed to Checkout
+                        {t("order.checkout")}
                       </Button>
 
                       <p className="text-xs text-center text-muted-foreground">
-                        {orderType === "delivery" ? "Delivery fee will be calculated at checkout" : "Pickup available in 20-30 minutes"}
+                        {orderType === "delivery" ? t("order.deliveryNote") : t("order.pickupNote")}
                       </p>
                     </div>
                   </>

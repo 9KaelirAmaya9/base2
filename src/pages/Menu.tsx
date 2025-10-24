@@ -4,10 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Menu = () => {
+  const { t } = useLanguage();
+
   const handleAddToCart = (itemName: string) => {
-    toast.success(`${itemName} added to cart`);
+    toast.success(`${itemName} ${t("menu.addToCart")}`);
   };
 
   return (
@@ -19,11 +22,10 @@ const Menu = () => {
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6">
-              Our <span className="text-primary">Menu</span>
+              {t("menu.title")} <span className="text-primary">{t("menu.titleHighlight")}</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover our selection of authentic Mexican dishes, 
-              each prepared with traditional recipes and fresh ingredients
+              {t("menu.subtitle")}
             </p>
           </div>
 
@@ -65,7 +67,7 @@ const Menu = () => {
                               className="gap-2"
                             >
                               <Plus className="h-4 w-4" />
-                              Add
+                              {t("menu.add")}
                             </Button>
                           </div>
                         </div>
@@ -79,12 +81,12 @@ const Menu = () => {
 
           {/* Notes */}
           <div className="mt-16 p-8 bg-card rounded-xl border border-border">
-            <h3 className="font-serif text-2xl font-semibold mb-4">Notes</h3>
+            <h3 className="font-serif text-2xl font-semibold mb-4">{t("menu.notes.title")}</h3>
             <ul className="space-y-2 text-muted-foreground">
-              <li>• Con Quesillo $1.00 Extra (With Cheese)</li>
-              <li>• Platillos served with arroz, frijoles, ensaladas o papas fritas (Rice, beans, salad, or french fries - choose 2 options)</li>
-              <li>• All orders extras available: Quesillo, Pico de Gallo, Guacamole, Nopales, Crema ($1.00 each)</li>
-              <li>• Catering services available for all occasions - call (917) 370-0430</li>
+              <li>• {t("menu.notes.1")}</li>
+              <li>• {t("menu.notes.2")}</li>
+              <li>• {t("menu.notes.3")}</li>
+              <li>• {t("menu.notes.4")}</li>
             </ul>
           </div>
         </div>
