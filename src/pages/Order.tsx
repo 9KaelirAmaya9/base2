@@ -112,8 +112,17 @@ const Order = () => {
               {/* Items Grid */}
               <div className="grid sm:grid-cols-2 gap-4">
                 {filteredItems.map((item) => (
-                  <Card key={item.id} className="p-5 hover:shadow-elegant transition-all">
-                    <div className="flex flex-col h-full">
+                  <Card key={item.id} className="overflow-hidden hover:shadow-elegant transition-all group">
+                    {item.image && (
+                      <div className="relative h-40 overflow-hidden">
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
+                    <div className="p-5 flex flex-col h-full">
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="font-serif text-lg font-semibold">
@@ -124,7 +133,7 @@ const Order = () => {
                           </span>
                         </div>
                         {item.description && (
-                          <p className="text-sm text-muted-foreground mb-3">
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                             {item.description}
                           </p>
                         )}

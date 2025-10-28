@@ -44,8 +44,17 @@ const Menu = () => {
                   
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {categoryItems.map((item) => (
-                      <Card key={item.id} className="p-6 hover:shadow-elegant transition-all duration-300 group">
-                        <div className="flex flex-col h-full">
+                      <Card key={item.id} className="overflow-hidden hover:shadow-elegant transition-all duration-300 group">
+                        {item.image && (
+                          <div className="relative h-48 overflow-hidden">
+                            <img 
+                              src={item.image} 
+                              alt={item.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                        )}
+                        <div className="p-6 flex flex-col h-full">
                           <div className="flex-1">
                             <h3 className="font-serif text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
                               {item.name}
