@@ -8,48 +8,48 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Ricos Tacos palette - inspired by logo: golden yellow, red, orange */
-    --background: 45 100% 94%;
+    /* Ricos Tacos palette - vibrant lime-yellow and bold red from menu */
+    --background: 72 95% 75%;
     --foreground: 0 80% 25%;
 
-    --card: 45 100% 97%;
+    --card: 72 90% 85%;
     --card-foreground: 0 80% 25%;
 
-    --popover: 45 100% 97%;
+    --popover: 72 90% 85%;
     --popover-foreground: 0 80% 25%;
 
-    /* Red primary from logo */
-    --primary: 0 70% 45%;
-    --primary-foreground: 45 100% 94%;
+    /* Bold red primary from menu */
+    --primary: 0 85% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Orange secondary */
-    --secondary: 30 90% 55%;
+    /* Vibrant lime secondary */
+    --secondary: 72 95% 75%;
     --secondary-foreground: 0 80% 25%;
 
-    /* Muted golden tones */
-    --muted: 45 70% 85%;
-    --muted-foreground: 45 40% 40%;
+    /* Muted lime tones */
+    --muted: 72 60% 70%;
+    --muted-foreground: 72 30% 35%;
 
     /* Warm accent */
-    --accent: 30 90% 55%;
+    --accent: 72 95% 75%;
     --accent-foreground: 0 80% 25%;
 
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 45 100% 94%;
+    --destructive: 0 85% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 45 50% 80%;
-    --input: 45 50% 80%;
-    --ring: 0 70% 45%;
+    --border: 72 50% 65%;
+    --input: 72 50% 65%;
+    --ring: 0 85% 50%;
 
     --radius: 0.75rem;
 
-    /* Custom design tokens - Ricos Tacos colors */
-    --golden-yellow: 45 100% 70%;
-    --golden-light: 45 100% 85%;
-    --golden-dark: 45 100% 55%;
-    --rico-red: 0 70% 45%;
-    --rico-red-light: 0 60% 60%;
-    --rico-red-dark: 0 80% 35%;
+    /* Custom design tokens - Ricos Tacos vibrant colors */
+    --golden-yellow: 72 95% 75%;
+    --golden-light: 72 90% 85%;
+    --golden-dark: 72 95% 60%;
+    --rico-red: 0 85% 50%;
+    --rico-red-light: 0 75% 65%;
+    --rico-red-dark: 0 90% 40%;
     --rico-orange: 30 90% 55%;
     --rico-orange-light: 30 80% 70%;
     --rico-orange-dark: 30 100% 45%;
