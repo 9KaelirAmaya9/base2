@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { toast } from "sonner";
-import { useLanguage } from "./LanguageContext";
 
 export interface CartItem {
   id: string;
@@ -25,11 +24,11 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { t } = useLanguage();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("pickup");
 
   const addToCart = (item: { id: string; name: string; price: number; image?: string }) => {
+    console.log("addToCart called with:", item);
     setCart(prevCart => {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
       if (existingItem) {
@@ -41,7 +40,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       return [...prevCart, { ...item, quantity: 1 }];
     });
-    toast.success(`${item.name} ${t("menu.addToCart")}`);
+    toast.success(`${item.name} added to cart!`);
   };
 
   const updateQuantity = (id: string, delta: number) => {
