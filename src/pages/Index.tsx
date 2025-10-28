@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/hero-tacos.jpg";
 import interiorImage from "@/assets/puebla-traditional.jpg";
-import logo from "@/assets/ricos-tacos-logo.png";
+import logo from "@/assets/ricos-tacos-main-logo.png";
 
 const Index = () => {
   const { t } = useLanguage();
@@ -153,7 +153,7 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <img src={logo} alt="Ricos Tacos" className="h-16 w-16" />
+                <img src={logo} alt="Ricos Tacos" className="h-16 w-auto" />
                 <h3 className="font-serif text-2xl font-bold">Ricos Tacos</h3>
               </div>
               <p className="text-muted-foreground">

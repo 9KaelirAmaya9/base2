@@ -5,7 +5,8 @@ import { Button } from "./ui/button";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
-import logo from "@/assets/ricos-tacos-logo.png";
+import logo from "@/assets/ricos-tacos-main-logo.png";
+import textilePattern from "@/assets/textile-pattern.png";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -32,22 +33,20 @@ export const Navigation = () => {
             <img 
               src={logo} 
               alt="Ricos Tacos" 
-              className="h-16 w-16 md:h-20 md:w-20 transition-transform group-hover:scale-105"
+              className="h-16 md:h-20 w-auto transition-transform group-hover:scale-105"
             />
-            <div className="hidden sm:flex flex-col items-start">
+            <div className="hidden sm:flex flex-col items-start gap-1">
               <span className="font-serif text-xs md:text-sm font-semibold tracking-wider text-foreground/80 uppercase">
                 Piaxtla es México Deli
               </span>
               <span className="font-serif text-2xl md:text-3xl font-bold tracking-tight text-primary group-hover:text-primary/80 transition-colors">
                 Ricos Tacos
               </span>
-              <div className="flex gap-1 mt-0.5">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <div className="w-2 h-2 bg-secondary rounded-full"></div>
-                <div className="w-2 h-2 bg-accent rounded-full"></div>
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <div className="w-2 h-2 bg-secondary rounded-full"></div>
-              </div>
+              <img 
+                src={textilePattern} 
+                alt="" 
+                className="h-2 w-32 object-cover rounded-sm"
+              />
             </div>
           </Link>
 
