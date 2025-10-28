@@ -22,16 +22,16 @@ const Index = () => {
             alt="Elegant tacos presentation" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
         </div>
         
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-foreground text-balance leading-tight">
+          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-white text-balance leading-tight drop-shadow-lg">
             {t("home.hero.title1")}
             <br />
-            <span className="text-primary">{t("home.hero.title2")}</span>
+            <span className="text-[hsl(var(--golden-yellow))]">{t("home.hero.title2")}</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 font-light">
+          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-12 font-light drop-shadow-md">
             {t("home.hero.subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
