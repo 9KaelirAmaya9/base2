@@ -8,7 +8,7 @@ const Location = () => {
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <Navigation />
       
       <div className="pt-32 pb-20">
@@ -131,7 +131,7 @@ const Location = () => {
           </div>
 
           {/* Catering Info */}
-          <Card className="mt-12 p-8 bg-primary text-primary-foreground max-w-4xl mx-auto">
+          <Card className="mt-12 p-8 bg-gradient-to-br from-primary via-rico-red-dark to-primary text-primary-foreground max-w-4xl mx-auto shadow-elegant border-0">
             <div className="text-center">
               <h2 className="font-serif text-3xl font-semibold mb-4">
                 {t("location.catering")}

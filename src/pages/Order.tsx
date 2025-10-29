@@ -39,7 +39,7 @@ const Order = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <Navigation />
       
       <div className="pt-32 pb-20">
@@ -98,17 +98,19 @@ const Order = () => {
                     {/* Items Grid */}
                     <div className="grid sm:grid-cols-2 gap-4">
                       {items.map((item) => (
-                        <Card key={item.id} className="overflow-hidden hover:shadow-elegant transition-all group flex flex-col">
+                        <Card key={item.id} className="overflow-hidden hover:shadow-elegant transition-all duration-300 group flex flex-col border-2 border-transparent hover:border-primary/10 bg-card">
                           {item.image && (
                             <div className="relative h-40 overflow-hidden flex-shrink-0">
                               <img 
                                 src={item.image} 
                                 alt={item.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                               />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                             </div>
                           )}
-                          <div className="p-5 flex flex-col flex-1">
+                          <div className="p-5 flex flex-col flex-1 bg-card">
                             <div className="flex items-start justify-between mb-2">
                               <h3 className="font-serif text-lg font-semibold">
                                 {getMenuItemName(item.id, language, item.name)}

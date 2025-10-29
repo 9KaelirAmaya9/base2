@@ -22,7 +22,7 @@ const Menu = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <Navigation />
       
       <div className="pt-32 pb-20">
@@ -52,17 +52,19 @@ const Menu = () => {
                   
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {categoryItems.map((item) => (
-                      <Card key={item.id} className="overflow-hidden hover:shadow-elegant transition-all duration-300 group">
+                      <Card key={item.id} className="overflow-hidden hover:shadow-elegant transition-all duration-300 group border-2 border-transparent hover:border-primary/10 bg-card">
                         {item.image && (
                           <div className="relative h-48 overflow-hidden">
                             <img 
                               src={item.image} 
                               alt={item.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           </div>
                         )}
-                        <div className="p-6 flex flex-col h-full">
+                        <div className="p-6 flex flex-col h-full bg-card">
                           <div className="flex-1">
                             <h3 className="font-serif text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
                               {getMenuItemName(item.id, language, item.name)}
@@ -97,7 +99,7 @@ const Menu = () => {
           </div>
 
           {/* Notes */}
-          <div className="mt-16 p-8 bg-card rounded-xl border border-border">
+          <div className="mt-16 p-8 bg-card rounded-xl border-2 border-border shadow-soft">
             <h3 className="font-serif text-2xl font-semibold mb-4">{t("menu.notes.title")}</h3>
             <ul className="space-y-2 text-muted-foreground">
               <li>• {t("menu.notes.1")}</li>

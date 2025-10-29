@@ -22,27 +22,27 @@ const Index = () => {
             alt="Elegant tacos presentation" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
         </div>
         
         <div className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-white text-balance leading-tight drop-shadow-lg">
+          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-bold mb-6 text-white text-balance leading-tight drop-shadow-2xl">
             {t("home.hero.title1")}
             <br />
-            <span className="text-[hsl(var(--golden-yellow))]">{t("home.hero.title2")}</span>
+            <span className="text-golden-yellow drop-shadow-lg">{t("home.hero.title2")}</span>
           </h1>
-          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-12 font-light drop-shadow-md">
+          <p className="text-lg md:text-xl text-white/95 max-w-2xl mx-auto mb-12 font-light drop-shadow-lg">
             {t("home.hero.subtitle")}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-5 justify-center">
             <Link to="/order">
-              <Button size="lg" className="text-base font-medium shadow-elegant">
+              <Button variant="premium" size="lg" className="text-base font-semibold min-w-[200px]">
                 {t("home.hero.orderNow")}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link to="/menu">
-              <Button variant="outline" size="lg" className="text-base font-medium">
+              <Button variant="outline" size="lg" className="text-base font-medium bg-white/95 hover:bg-white border-white text-foreground hover:text-foreground min-w-[200px]">
                 {t("home.hero.viewMenu")}
               </Button>
             </Link>
@@ -51,7 +51,7 @@ const Index = () => {
       </section>
 
       {/* About Section */}
-      <section className="py-24 md:py-32 bg-card">
+      <section className="py-24 md:py-32 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
@@ -67,16 +67,16 @@ const Index = () => {
                 {t("home.about.p2")}
               </p>
               <Link to="/menu">
-                <Button variant="outline" className="mt-4">
+                <Button size="lg" className="mt-6">
                   {t("home.about.exploreMenu")}
                 </Button>
               </Link>
             </div>
-            <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-elegant">
+            <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-elegant group">
               <img 
                 src={interiorImage} 
                 alt="Traditional Puebla restaurant interior" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
             </div>
           </div>
@@ -84,7 +84,7 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 md:py-32">
+      <section className="py-24 md:py-32 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">
@@ -96,31 +96,31 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card p-8 rounded-xl shadow-soft hover:shadow-elegant transition-shadow">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-background p-8 rounded-xl shadow-card hover:shadow-elegant transition-all duration-300 border border-border hover:border-primary/20 group">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary/15 transition-colors">
                 <span className="text-3xl">🌮</span>
               </div>
-              <h3 className="font-serif text-2xl font-semibold mb-4">{t("home.feature1.title")}</h3>
+              <h3 className="font-serif text-2xl font-semibold mb-4 group-hover:text-primary transition-colors">{t("home.feature1.title")}</h3>
               <p className="text-muted-foreground leading-relaxed">
                 {t("home.feature1.desc")}
               </p>
             </div>
 
-            <div className="bg-card p-8 rounded-xl shadow-soft hover:shadow-elegant transition-shadow">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-background p-8 rounded-xl shadow-card hover:shadow-elegant transition-all duration-300 border border-border hover:border-primary/20 group">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary/15 transition-colors">
                 <span className="text-3xl">🚗</span>
               </div>
-              <h3 className="font-serif text-2xl font-semibold mb-4">{t("home.feature2.title")}</h3>
+              <h3 className="font-serif text-2xl font-semibold mb-4 group-hover:text-primary transition-colors">{t("home.feature2.title")}</h3>
               <p className="text-muted-foreground leading-relaxed">
                 {t("home.feature2.desc")}
               </p>
             </div>
 
-            <div className="bg-card p-8 rounded-xl shadow-soft hover:shadow-elegant transition-shadow">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <div className="bg-background p-8 rounded-xl shadow-card hover:shadow-elegant transition-all duration-300 border border-border hover:border-primary/20 group">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary/15 transition-colors">
                 <span className="text-3xl">🎉</span>
               </div>
-              <h3 className="font-serif text-2xl font-semibold mb-4">{t("home.feature3.title")}</h3>
+              <h3 className="font-serif text-2xl font-semibold mb-4 group-hover:text-primary transition-colors">{t("home.feature3.title")}</h3>
               <p className="text-muted-foreground leading-relaxed">
                 {t("home.feature3.desc")}
               </p>
@@ -130,16 +130,17 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 md:py-32 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">
+      <section className="py-24 md:py-32 bg-gradient-to-br from-primary via-rico-red-dark to-primary text-primary-foreground relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE4YzAtOS45NC04LjA2LTE4LTE4LTE4IDE5Ljk0IDAgMzYgMTYuMDYgMzYgMzYgMC05Ljk0LTguMDYtMTgtMTgtMTh6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6 drop-shadow-lg">
             {t("home.cta.title")}
           </h2>
-          <p className="text-lg md:text-xl mb-12 opacity-90 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl mb-12 text-white/95 max-w-2xl mx-auto drop-shadow-md">
             {t("home.cta.subtitle")}
           </p>
           <Link to="/order">
-            <Button size="lg" variant="secondary" className="text-base font-medium">
+            <Button size="lg" className="bg-white text-foreground hover:bg-white/90 text-base font-semibold shadow-2xl hover:shadow-3xl hover:scale-105 transition-all min-w-[200px]">
               {t("home.cta.startOrder")}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -148,7 +149,7 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-card py-12 border-t border-border">
+      <footer className="bg-muted/30 py-12 border-t border-border">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
