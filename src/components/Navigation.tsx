@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
-import logo from "@/assets/ricos-tacos-header-logo.png";
+import logo from "@/assets/logo-header-green.png";
 import {
   NavigationMenu,
   NavigationMenuContent,
