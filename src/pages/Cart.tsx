@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -23,7 +24,7 @@ const Cart = () => {
     notes: "",
   });
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (cart.length === 0) {
       toast.error(t("order.cartEmpty"));
       return;
@@ -39,9 +40,36 @@ const Cart = () => {
       return;
     }
 
-    toast.success(`${t("order.placed")} for ${orderType}!`);
-    clearCart();
-    setCustomerInfo({ name: "", phone: "", email: "", address: "", notes: "" });
+    try {
+      const subtotal = cartTotal;
+      const tax = subtotal * 0.08; // 8% tax
+      const total = subtotal + tax;
+
+      const { error } = await supabase
+        .from("orders")
+        .insert({
+          order_number: "",
+          customer_name: customerInfo.name,
+          customer_email: customerInfo.email || null,
+          customer_phone: customerInfo.phone,
+          order_type: orderType,
+          delivery_address: orderType === "delivery" ? customerInfo.address : null,
+          items: cart as any,
+          subtotal,
+          tax,
+          total,
+          notes: customerInfo.notes || null,
+        });
+
+      if (error) throw error;
+
+      toast.success(`${t("order.placed")} for ${orderType}!`);
+      clearCart();
+      setCustomerInfo({ name: "", phone: "", email: "", address: "", notes: "" });
+    } catch (error: any) {
+      console.error("Order error:", error);
+      toast.error("Failed to place order. Please try again.");
+    }
   };
 
   return (
