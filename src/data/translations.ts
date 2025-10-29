@@ -111,6 +111,25 @@ export const translations: Record<"en" | "es", Translations> = {
     "cart.emptyDesc": "Start adding delicious items from our menu to begin your order",
     "cart.browseMenu": "Browse Menu",
 
+    // Menu Categories
+    "category.desayunos": "Mexican Breakfasts",
+    "category.tamales": "Tamales",
+    "category.carnes": "Meats for Tacos",
+    "category.tacos": "Specialty Tacos",
+    "category.taquitos": "Small Soft Tacos",
+    "category.tostadas": "Crispy Tostadas",
+    "category.tortas": "Mexican Sandwiches",
+    "category.burritos": "Burritos",
+    "category.sopas": "Soups",
+    "category.platillos": "Main Dishes",
+    "category.kids": "Kids Menu",
+    "category.sides": "Side Orders",
+    "category.weekend": "Weekend Specials",
+    "category.quesadillas": "Quesadillas",
+    "category.antojitos": "Mexican Snacks",
+    "category.bebidas": "Drinks",
+    "category.postres": "Desserts",
+
     // Common
     "common.browseMenu": "Browse Menu",
     "common.days": "Monday - Sunday",
@@ -225,6 +244,25 @@ export const translations: Record<"en" | "es", Translations> = {
     "cart.emptyDesc": "Comienza agregando deliciosos artículos de nuestro menú para comenzar tu orden",
     "cart.browseMenu": "Explorar Menú",
 
+    // Menu Categories
+    "category.desayunos": "Desayunos Mexicanos",
+    "category.tamales": "Tamales",
+    "category.carnes": "Carnes para Tacos",
+    "category.tacos": "Tacos Especiales",
+    "category.taquitos": "Taquitos",
+    "category.tostadas": "Tostadas",
+    "category.tortas": "Tortas",
+    "category.burritos": "Burritos",
+    "category.sopas": "Sopas",
+    "category.platillos": "Platillos Principales",
+    "category.kids": "Menú Infantil",
+    "category.sides": "Guarniciones",
+    "category.weekend": "Fines de Semana",
+    "category.quesadillas": "Quesadillas",
+    "category.antojitos": "Antojitos Mexicanos",
+    "category.bebidas": "Bebidas",
+    "category.postres": "Postres",
+
     // Common
     "common.browseMenu": "Explorar Menú",
     "common.days": "Lunes - Domingo",
@@ -235,4 +273,30 @@ export const translations: Record<"en" | "es", Translations> = {
 
 export const getTranslation = (language: "en" | "es", key: string): string => {
   return translations[language][key] || key;
+};
+
+// Map English category names to translation keys
+const categoryKeyMap: Record<string, string> = {
+  "Desayunos Mexicanos": "category.desayunos",
+  "Tamales": "category.tamales",
+  "Carnes/Meats": "category.carnes",
+  "Tacos": "category.tacos",
+  "Taquitos": "category.taquitos",
+  "Tostadas": "category.tostadas",
+  "Tortas": "category.tortas",
+  "Burritos": "category.burritos",
+  "Sopas": "category.sopas",
+  "Main Platillos": "category.platillos",
+  "Kids Menu": "category.kids",
+  "Side Orders": "category.sides",
+  "Fines de Semana": "category.weekend",
+  "Quesadillas": "category.quesadillas",
+  "Antojitos": "category.antojitos",
+  "Bebidas": "category.bebidas",
+  "Postres": "category.postres",
+};
+
+export const getCategoryTranslation = (language: "en" | "es", categoryName: string): string => {
+  const key = categoryKeyMap[categoryName];
+  return key ? translations[language][key] : categoryName;
 };

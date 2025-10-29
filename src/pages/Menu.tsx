@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { menuItems, menuCategories } from "@/data/menuData";
 import { getMenuItemName, getMenuItemDescription } from "@/data/menuTranslations";
+import { getCategoryTranslation } from "@/data/translations";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -46,7 +47,7 @@ const Menu = () => {
               return (
                 <section key={category} id={category.toLowerCase().replace(/\s+/g, '-')}>
                   <h2 className="font-serif text-3xl md:text-4xl font-bold mb-8 pb-4 border-b-2 border-primary/20">
-                    {category}
+                    {getCategoryTranslation(language, category)}
                   </h2>
                   
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

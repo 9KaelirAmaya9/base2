@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { menuItems, menuCategories } from "@/data/menuData";
 import { getMenuItemName, getMenuItemDescription } from "@/data/menuTranslations";
+import { getCategoryTranslation } from "@/data/translations";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -75,7 +76,7 @@ const Order = () => {
                     <SelectItem value="All">{t("order.allItems")}</SelectItem>
                     {menuCategories.map(category => (
                       <SelectItem key={category} value={category}>
-                        {category}
+                        {getCategoryTranslation(language, category)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -89,7 +90,7 @@ const Order = () => {
                     {/* Category Header */}
                     <div className="mb-6">
                       <h2 className="font-serif text-3xl font-bold text-foreground mb-2">
-                        {category}
+                        {getCategoryTranslation(language, category)}
                       </h2>
                       <div className="h-1 w-20 bg-primary rounded-full"></div>
                     </div>
