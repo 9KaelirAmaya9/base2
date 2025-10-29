@@ -157,6 +157,7 @@ export interface MenuItem {
   price: number;
   category: string;
   image?: string;
+  bestSeller?: boolean;
 }
 
 export const menuCategories = [
@@ -188,9 +189,9 @@ export const menuItems: MenuItem[] = [
   { id: "b5", name: "Burrito Chorizo", description: "Spicy Mexican sausage with eggs, beans, and cheese", price: 14.00, category: "Desayunos Mexicanos", image: burritoChorizo },
 
   // Carnes/Meats (Meat Options for Tacos)
-  { id: "m1", name: "Al Pastor", description: "Juicy marinated pork with pineapple, grilled to perfection on the trompo", price: 5.00, category: "Carnes/Meats", image: alPastor },
+  { id: "m1", name: "Al Pastor", description: "Juicy marinated pork with pineapple, grilled to perfection on the trompo", price: 5.00, category: "Carnes/Meats", image: alPastor, bestSeller: true },
   { id: "m2", name: "Bistec", description: "Grilled beef steak, seasoned simply to let the flavor shine", price: 5.00, category: "Carnes/Meats", image: bistecTaco },
-  { id: "m3", name: "Carnitas", description: "Crispy-edged, melt-in-your-mouth fried pork, the ultimate comfort", price: 5.00, category: "Carnes/Meats", image: carnitasTaco },
+  { id: "m3", name: "Carnitas", description: "Crispy-edged, melt-in-your-mouth fried pork, the ultimate comfort", price: 5.00, category: "Carnes/Meats", image: carnitasTaco, bestSeller: true },
   { id: "m4", name: "Cecina", description: "Thin-sliced salted beef, grilled to smoky perfection", price: 5.00, category: "Carnes/Meats", image: cecinaTaco },
   { id: "m5", name: "Pollo Asado", description: "Smoky grilled chicken with char-kissed perfection", price: 5.00, category: "Carnes/Meats", image: polloAsadoTaco },
   { id: "m6", name: "Lengua", description: "Tender, melt-in-your-mouth beef tongue, seasoned to perfection", price: 5.00, category: "Carnes/Meats", image: lenguaTaco },
@@ -205,9 +206,9 @@ export const menuItems: MenuItem[] = [
   { id: "m15", name: "Oreja", description: "Crispy pig ear with incredible texture and flavor", price: 5.00, category: "Carnes/Meats", image: orejaTaco },
 
   // Tacos (Specialty Tacos)
-  { id: "t1", name: "Cochinita Pibil", description: "Slow-roasted pork marinated in citrus and achiote, tender and aromatic", price: 5.00, category: "Tacos", image: cochinita },
-  { id: "t2", name: "Birria", description: "Rich, slow-braised beef in savory chile broth, perfectly spiced", price: 5.00, category: "Tacos", image: birriaTaco },
-  { id: "t16", name: "Tacos Arabes", description: "Middle Eastern-inspired pork wrapped in flour tortilla", price: 5.00, category: "Tacos", image: tacosArabes },
+  { id: "t1", name: "Cochinita Pibil", description: "Slow-roasted pork marinated in citrus and achiote, tender and aromatic", price: 5.00, category: "Tacos", image: cochinita, bestSeller: true },
+  { id: "t2", name: "Birria", description: "Rich, slow-braised beef in savory chile broth, perfectly spiced", price: 5.00, category: "Tacos", image: birriaTaco, bestSeller: true },
+  { id: "t16", name: "Tacos Arabes", description: "Middle Eastern-inspired pork wrapped in flour tortilla", price: 5.00, category: "Tacos", image: tacosArabes, bestSeller: true },
   { id: "t18", name: "Barbachera", description: "Traditional pit-barbecued meat, tender and aromatic", price: 5.00, category: "Tacos", image: barbacheraTaco },
   { id: "t19", name: "Carne Azada", description: "Flame-grilled steak with smoky char and bold flavor", price: 5.00, category: "Tacos", image: carneAsadaTaco },
   { id: "t21", name: "Chillo", description: "Fresh fish fillet, lightly seasoned and perfectly grilled", price: 5.00, category: "Tacos", image: chilloTaco },
@@ -276,9 +277,9 @@ export const menuItems: MenuItem[] = [
   { id: "s6", name: "Birria de Res (Consomé)", description: "Rich beef consommé with tender meat, for dipping", price: 13.99, category: "Sopas", image: birriaConsomme },
 
   // Main Platillos (Main Dishes)
-  { id: "p1", name: "Molcajete", description: "Sizzling volcanic stone bowl with grilled meats, nopales, and cheese", price: 25.00, category: "Main Platillos", image: molcajete },
+  { id: "p1", name: "Molcajete", description: "Sizzling volcanic stone bowl with grilled meats, nopales, and cheese", price: 25.00, category: "Main Platillos", image: molcajete, bestSeller: true },
   { id: "p2", name: "Cochinita Pibil", description: "Slow-roasted Yucatan pork in citrus-achiote marinade with pickled onions", price: 25.00, category: "Main Platillos", image: cochinitaPlatillo },
-  { id: "p3", name: "Birria", description: "Traditional slow-braised beef in rich chile broth with tortillas", price: 13.99, category: "Main Platillos", image: birriaPlatillo },
+  { id: "p3", name: "Birria", description: "Traditional slow-braised beef in rich chile broth with tortillas", price: 13.99, category: "Main Platillos", image: birriaPlatillo, bestSeller: true },
   { id: "p4", name: "Ricos Chiles Rellenos", description: "Poblano peppers stuffed with cheese, in savory tomato sauce", price: 16.00, category: "Main Platillos", image: chilesRellenos },
   { id: "p5", name: "Chuleta de Puerco", description: "Juicy grilled pork chop with rice, beans, and salad", price: 16.00, category: "Main Platillos", image: chuletaPuerco },
   { id: "p6", name: "Bistec Encebollado", description: "Tender steak smothered in caramelized onions", price: 17.00, category: "Main Platillos", image: bistecEncebollado },
@@ -290,7 +291,7 @@ export const menuItems: MenuItem[] = [
   { id: "p13", name: "Cecina", description: "Thin-sliced salted beef, grilled with nopales and fresh cheese", price: 16.00, category: "Main Platillos", image: cecinaPlatillo },
   { id: "p14", name: "Mojarra Frita", description: "Whole fried tilapia, crispy outside and tender inside", price: 19.00, category: "Main Platillos", image: mojarraFrita },
   { id: "p15", name: "Coctel de Camarones", description: "Chilled shrimp cocktail in tangy tomato sauce with avocado", price: 15.00, category: "Main Platillos", image: coctelCamarones },
-  { id: "p16", name: "Mole Poblano", description: "Chicken in rich chocolate-chile sauce, a Mexican classic", price: 15.00, category: "Main Platillos", image: molePoblano },
+  { id: "p16", name: "Mole Poblano", description: "Chicken in rich chocolate-chile sauce, a Mexican classic", price: 15.00, category: "Main Platillos", image: molePoblano, bestSeller: true },
   { id: "p17", name: "Pechuga Asada", description: "Perfectly grilled chicken breast with fresh sides", price: 16.00, category: "Main Platillos", image: pechugaAsada },
   { id: "p18", name: "Carne Azada", description: "Charred grilled steak with smoky flavor and tender texture", price: 17.00, category: "Main Platillos", image: carneAsadaPlatillo },
   { id: "p19", name: "Carne Enchilada", description: "Chile-marinated pork, grilled to spicy perfection", price: 17.00, category: "Main Platillos", image: carneEnchiladaPlatillo },

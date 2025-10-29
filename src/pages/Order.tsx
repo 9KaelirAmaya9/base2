@@ -4,14 +4,17 @@ import { getMenuItemName, getMenuItemDescription } from "@/data/menuTranslations
 import { getCategoryTranslation } from "@/data/translations";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { cn } from "@/lib/utils";
 
 const Order = () => {
   const { t, language } = useLanguage();
@@ -85,65 +88,110 @@ const Order = () => {
 
               {/* Items by Category */}
               <div className="space-y-12">
-                {Object.entries(groupedItems).map(([category, items]) => (
-                  <div key={category}>
-                    {/* Category Header */}
-                    <div className="mb-6">
-                      <h2 className="font-serif text-3xl font-bold text-foreground mb-2">
-                        {getCategoryTranslation(language, category)}
-                      </h2>
-                      <div className="h-1 w-20 bg-primary rounded-full"></div>
-                    </div>
+                {Object.entries(groupedItems).map(([category, items]) => {
+                  const CategorySection = () => {
+                    const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 });
+                    
+                    return (
+                      <div key={category} ref={ref}>
+                        {/* Category Header */}
+                        <div className={cn(
+                          "mb-6 transition-all duration-700",
+                          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                        )}>
+                          <h2 className="font-serif text-3xl font-bold text-foreground mb-2">
+                            {getCategoryTranslation(language, category)}
+                          </h2>
+                          <div className="h-1 w-20 bg-primary rounded-full"></div>
+                        </div>
 
-                    {/* Items Grid */}
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      {items.map((item) => (
-                        <Card key={item.id} className="overflow-hidden hover:shadow-elegant transition-all duration-300 group flex flex-col border-2 border-transparent hover:border-primary/10 bg-card">
-                          {item.image && (
-                            <div className="relative h-40 overflow-hidden flex-shrink-0">
-                              <img 
-                                src={item.image} 
-                                alt={item.name}
-                                loading="lazy"
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            </div>
-                          )}
-                          <div className="p-5 flex flex-col flex-1 bg-card">
-                            <div className="flex items-start justify-between mb-2">
-                              <h3 className="font-serif text-lg font-semibold">
-                                {getMenuItemName(item.id, language, item.name)}
-                              </h3>
-                              <span className="text-lg font-semibold text-primary whitespace-nowrap ml-2">
-                                ${item.price.toFixed(2)}
-                              </span>
-                            </div>
-                            {item.description && (
-                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                {getMenuItemDescription(item.id, language, item.description)}
-                              </p>
-                            )}
+                        {/* Items Grid */}
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {items.map((item, index) => {
+                            const ItemCard = () => {
+                              const { ref: cardRef, isVisible: cardVisible } = useScrollAnimation({ 
+                                threshold: 0.1,
+                                rootMargin: "-50px"
+                              });
+                              
+                              return (
+                                <div
+                                  ref={cardRef}
+                                  className={cn(
+                                    "transition-all duration-500",
+                                    cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                                  )}
+                                  style={{ transitionDelay: `${index * 50}ms` }}
+                                >
+                                  <Card className="overflow-hidden hover:shadow-elegant transition-all duration-300 group flex flex-col border-2 border-transparent hover:border-primary/10 bg-card h-full">
+                                    {item.image && (
+                                      <div className="relative h-40 overflow-hidden flex-shrink-0">
+                                        <img 
+                                          src={item.image} 
+                                          alt={item.name}
+                                          loading="lazy"
+                                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        {item.bestSeller && (
+                                          <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground shadow-elegant gap-1">
+                                            <Star className="h-3 w-3 fill-current" />
+                                            Best Seller
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    )}
+                                    <div className="p-5 flex flex-col flex-1 bg-card">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div className="flex-1">
+                                          <h3 className="font-serif text-lg font-semibold">
+                                            {getMenuItemName(item.id, language, item.name)}
+                                          </h3>
+                                          {item.bestSeller && !item.image && (
+                                            <Badge variant="secondary" className="mt-1 gap-1">
+                                              <Star className="h-3 w-3 fill-current" />
+                                              Best Seller
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <span className="text-lg font-semibold text-primary whitespace-nowrap ml-2">
+                                          ${item.price.toFixed(2)}
+                                        </span>
+                                      </div>
+                                      {item.description && (
+                                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                          {getMenuItemDescription(item.id, language, item.description)}
+                                        </p>
+                                      )}
+                                      
+                                      <Button 
+                                        size="sm" 
+                                        onClick={() => addToCart({ 
+                                          id: item.id, 
+                                          name: getMenuItemName(item.id, language, item.name), 
+                                          price: item.price,
+                                          image: item.image 
+                                        })}
+                                        className="w-full mt-auto gap-2"
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                        {t("order.addToCart")}
+                                      </Button>
+                                    </div>
+                                  </Card>
+                                </div>
+                              );
+                            };
                             
-                            <Button 
-                              size="sm" 
-                              onClick={() => addToCart({ 
-                                id: item.id, 
-                                name: getMenuItemName(item.id, language, item.name), 
-                                price: item.price,
-                                image: item.image 
-                              })}
-                              className="w-full mt-auto gap-2"
-                            >
-                              <Plus className="h-4 w-4" />
-                              {t("order.addToCart")}
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                            return <ItemCard key={item.id} />;
+                          })}
+                        </div>
+                      </div>
+                    );
+                  };
+                  
+                  return <CategorySection key={category} />;
+                })}
               </div>
             </div>
 
