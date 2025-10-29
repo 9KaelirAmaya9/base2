@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -29,13 +30,26 @@ const Cart = () => {
       toast.error(t("order.cartEmpty"));
       return;
     }
+
+    // Input validation schema
+    const orderSchema = z.object({
+      name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
+      phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(20, "Phone number is too long"),
+      email: z.string().trim().email("Invalid email format").max(255, "Email is too long").optional().or(z.literal("")),
+      address: z.string().trim().max(500, "Address is too long").optional().or(z.literal("")),
+      notes: z.string().trim().max(1000, "Notes are too long").optional().or(z.literal("")),
+    });
     
-    if (!customerInfo.name || !customerInfo.phone) {
-      toast.error("Please provide your name and phone number");
+    // Validate customer information
+    const validation = orderSchema.safeParse(customerInfo);
+    
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
-    if (orderType === "delivery" && !customerInfo.address) {
+    if (orderType === "delivery" && !customerInfo.address.trim()) {
       toast.error("Please provide a delivery address");
       return;
     }
@@ -47,19 +61,19 @@ const Cart = () => {
 
       const { data: orderData, error } = await supabase
         .from("orders")
-        .insert({
+        .insert([{
           order_number: "",
-          customer_name: customerInfo.name,
-          customer_email: customerInfo.email || null,
-          customer_phone: customerInfo.phone,
+          customer_name: validation.data.name,
+          customer_email: validation.data.email || null,
+          customer_phone: validation.data.phone,
           order_type: orderType,
-          delivery_address: orderType === "delivery" ? customerInfo.address : null,
+          delivery_address: orderType === "delivery" ? validation.data.address : null,
           items: cart as any,
           subtotal,
           tax,
           total,
-          notes: customerInfo.notes || null,
-        })
+          notes: validation.data.notes || null,
+        }])
         .select()
         .single();
 
@@ -70,9 +84,9 @@ const Cart = () => {
         await supabase.functions.invoke('send-order-notification', {
           body: {
             orderNumber: orderData.order_number,
-            customerName: customerInfo.name,
-            customerEmail: customerInfo.email || null,
-            customerPhone: customerInfo.phone,
+            customerName: validation.data.name,
+            customerEmail: validation.data.email || null,
+            customerPhone: validation.data.phone,
             orderType: orderType,
             total: total,
             items: cart.map(item => ({
@@ -83,15 +97,14 @@ const Cart = () => {
           }
         });
       } catch (notifError) {
-        console.error('Notification error:', notifError);
         // Don't fail the order if notification fails
+        toast.warning("Order placed but notification failed to send");
       }
 
       toast.success(`${t("order.placed")} #${orderData.order_number} for ${orderType}!`);
       clearCart();
       setCustomerInfo({ name: "", phone: "", email: "", address: "", notes: "" });
     } catch (error: any) {
-      console.error("Order error:", error);
       toast.error("Failed to place order. Please try again.");
     }
   };

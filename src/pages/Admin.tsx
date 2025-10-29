@@ -62,14 +62,15 @@ const Admin = () => {
 
     setUser(session.user);
     
-    // Check if user is admin
-    const { data: adminData } = await supabase
-      .from("admin_users")
-      .select("*")
+    // Check if user has admin role (server-side verification via RLS)
+    const { data: userRoles, error } = await supabase
+      .from("user_roles")
+      .select("role")
       .eq("user_id", session.user.id)
+      .eq("role", "admin")
       .single();
 
-    if (!adminData) {
+    if (error || !userRoles) {
       toast.error("You don't have admin access");
       await supabase.auth.signOut();
       navigate("/auth");
@@ -91,7 +92,6 @@ const Admin = () => {
       setOrders(data || []);
     } catch (error: any) {
       toast.error("Failed to fetch orders");
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +115,6 @@ const Admin = () => {
       fetchOrders();
     } catch (error: any) {
       toast.error("Failed to update order status");
-      console.error(error);
     }
   };
 
