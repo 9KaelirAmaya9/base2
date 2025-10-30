@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Star } from "lucide-react";
-import { FloatingCartButton } from "@/components/FloatingCartButton";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -36,7 +35,6 @@ const Order = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <Navigation />
-      <FloatingCartButton />
       
       <div className="pt-32 pb-20">
         <div className="container mx-auto px-4">
