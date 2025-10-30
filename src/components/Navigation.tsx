@@ -47,22 +47,22 @@ export const Navigation = () => {
                   <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
-                  <div className="w-0.5 bg-black"></div>
+                  <div className="w-1 bg-black"></div>
                   <div className="flex-1" style={{ backgroundColor: '#0071BC' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#57B947' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#FDB913' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#F68D2E' }}></div>
-                  <div className="w-0.5 bg-black"></div>
+                  <div className="w-1 bg-black"></div>
                   <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#00BCD4' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
-                  <div className="w-0.5 bg-black"></div>
+                  <div className="w-1 bg-black"></div>
                   <div className="flex-1" style={{ backgroundColor: '#0071BC' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#57B947' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#FDB913' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#F68D2E' }}></div>
-                  <div className="w-0.5 bg-black"></div>
+                  <div className="w-1 bg-black"></div>
                   <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
                   <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
