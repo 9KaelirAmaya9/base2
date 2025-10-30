@@ -17,7 +17,7 @@ export const translations: Record<"en" | "es", Translations> = {
     // Homepage
     "home.hero.title1": "Auténtica Cocina",
     "home.hero.title2": "Mexicana",
-    "home.hero.subtitle": "Experience the refined flavors of Mexico in the heart of Brooklyn. Every dish crafted with passion and tradition.",
+    "home.hero.subtitle": "Puebla's time-honored recipes meet Bay Ridge tradition. Every dish crafted with passion and authentic flavors.",
     "home.hero.orderNow": "Order Now",
     "home.hero.viewMenu": "View Menu",
     
@@ -150,7 +150,7 @@ export const translations: Record<"en" | "es", Translations> = {
     // Homepage
     "home.hero.title1": "Auténtica Cocina",
     "home.hero.title2": "Mexicana",
-    "home.hero.subtitle": "Experimenta los sabores refinados de México en el corazón de Brooklyn. Cada platillo elaborado con pasión y tradición.",
+    "home.hero.subtitle": "Las recetas tradicionales de Puebla encuentran su hogar en Bay Ridge. Cada platillo elaborado con pasión y sabores auténticos.",
     "home.hero.orderNow": "Ordenar Ahora",
     "home.hero.viewMenu": "Ver Menú",
     
