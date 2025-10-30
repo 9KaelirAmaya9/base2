@@ -96,9 +96,9 @@ All colors MUST be HSL.
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
     /* Subtle textures and patterns */
-    --texture-paper: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.015 0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E");
+    --texture-paper: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
     
-    --pattern-tile: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L35 15L50 15L38 24L42 39L30 30L18 39L22 24L10 15L25 15Z' fill='none' stroke='hsl(43 98% 54% / 0.03)' stroke-width='1'/%3E%3Ccircle cx='30' cy='30' r='3' fill='hsl(358 78% 51% / 0.02)'/%3E%3C/svg%3E");
+    --pattern-tile: url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='tile' x='0' y='0' width='80' height='80' patternUnits='userSpaceOnUse'%3E%3Cpath d='M40 0 L50 20 L70 20 L55 32 L60 52 L40 40 L20 52 L25 32 L10 20 L30 20 Z' fill='none' stroke='%23F68D2E' stroke-width='0.5' opacity='0.08'/%3E%3Ccircle cx='40' cy='40' r='4' fill='%23E31E24' opacity='0.06'/%3E%3Crect x='0' y='0' width='2' height='2' fill='%2357B947' opacity='0.04'/%3E%3Crect x='78' y='0' width='2' height='2' fill='%2357B947' opacity='0.04'/%3E%3Crect x='0' y='78' width='2' height='2' fill='%2357B947' opacity='0.04'/%3E%3Crect x='78' y='78' width='2' height='2' fill='%2357B947' opacity='0.04'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='80' height='80' fill='url(%23tile)'/%3E%3C/svg%3E");
 
     --sidebar-background: 42 52% 98%;
     --sidebar-foreground: 20 14% 20%;
@@ -183,8 +183,9 @@ All colors MUST be HSL.
   }
   
   .pattern-tile {
+    position: relative;
     background-image: var(--pattern-tile);
-    background-size: 60px 60px;
+    background-size: 80px 80px;
     background-repeat: repeat;
   }
   
@@ -193,12 +194,18 @@ All colors MUST be HSL.
   }
   
   .texture-warm::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     background-image: var(--pattern-tile);
-    background-size: 60px 60px;
-    opacity: 0.4;
+    background-size: 80px 80px;
+    opacity: 0.6;
     pointer-events: none;
+    z-index: 0;
+  }
+  
+  .texture-warm > * {
+    position: relative;
+    z-index: 1;
   }
 }
