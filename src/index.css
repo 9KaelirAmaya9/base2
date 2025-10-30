@@ -8,8 +8,8 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Professional warm neutrals base - world-class foundation */
-    --background: 42 52% 96%;
+    /* Vibrant Mexican serape color palette */
+    --background: 0 0% 100%;
     --foreground: 20 14% 20%;
 
     --card: 0 0% 100%;
@@ -18,41 +18,70 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 20 14% 20%;
 
-    /* Bold red primary - kept from original */
-    --primary: 0 84% 50%;
+    /* Bold red primary from menu border */
+    --primary: 358 78% 51%;
     --primary-foreground: 0 0% 100%;
 
-    /* Warm cream secondary for accents */
-    --secondary: 42 87% 92%;
+    /* Warm yellow secondary */
+    --secondary: 43 98% 54%;
     --secondary-foreground: 20 14% 20%;
 
-    /* Sophisticated muted tones */
-    --muted: 42 30% 94%;
+    /* Soft muted tones */
+    --muted: 43 20% 94%;
     --muted-foreground: 20 8% 45%;
 
-    /* Warm accent highlights */
-    --accent: 42 87% 88%;
-    --accent-foreground: 20 14% 20%;
+    /* Orange accent from border */
+    --accent: 24 91% 57%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 50%;
+    --destructive: 358 78% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 42 20% 88%;
-    --input: 42 20% 88%;
-    --ring: 0 84% 50%;
+    --border: 43 20% 88%;
+    --input: 43 20% 88%;
+    --ring: 358 78% 51%;
 
     --radius: 0.75rem;
 
-    /* Enhanced custom design tokens - professional palette */
-    --golden-yellow: 45 93% 75%;
-    --golden-light: 45 100% 85%;
-    --golden-dark: 45 90% 65%;
-    --rico-red: 0 84% 50%;
-    --rico-red-light: 0 78% 65%;
-    --rico-red-dark: 0 90% 40%;
-    --rico-orange: 28 92% 58%;
-    --rico-orange-light: 28 88% 72%;
-    --rico-orange-dark: 28 95% 48%;
+    /* Full serape color palette from menu border */
+    --serape-red: 358 78% 51%;
+    --serape-red-light: 358 78% 65%;
+    --serape-red-dark: 358 78% 40%;
+    
+    --serape-orange: 24 91% 57%;
+    --serape-orange-light: 24 91% 70%;
+    --serape-orange-dark: 24 91% 45%;
+    
+    --serape-yellow: 43 98% 54%;
+    --serape-yellow-light: 43 98% 70%;
+    --serape-yellow-dark: 43 98% 45%;
+    
+    --serape-green: 111 45% 51%;
+    --serape-green-light: 111 45% 65%;
+    --serape-green-dark: 111 45% 40%;
+    
+    --serape-blue: 203 100% 37%;
+    --serape-blue-light: 203 100% 50%;
+    --serape-blue-dark: 203 100% 28%;
+    
+    --serape-purple: 302 56% 37%;
+    --serape-purple-light: 302 56% 50%;
+    --serape-purple-dark: 302 56% 28%;
+    
+    --serape-pink: 330 75% 55%;
+    --serape-pink-light: 330 75% 70%;
+    --serape-pink-dark: 330 75% 45%;
+    
+    /* Gradient using all serape colors */
+    --gradient-serape: linear-gradient(90deg, 
+      hsl(358 78% 51%), 
+      hsl(24 91% 57%), 
+      hsl(43 98% 54%), 
+      hsl(111 45% 51%), 
+      hsl(203 100% 37%), 
+      hsl(302 56% 37%), 
+      hsl(330 75% 55%)
+    );
     
   /* Typography */
   --font-serif: 'Bebas Neue', sans-serif;
@@ -78,27 +107,27 @@ All colors MUST be HSL.
 
   .dark {
     --background: 20 18% 10%;
-    --foreground: 42 52% 96%;
+    --foreground: 0 0% 96%;
 
     --card: 20 15% 13%;
-    --card-foreground: 42 52% 96%;
+    --card-foreground: 0 0% 96%;
 
     --popover: 20 15% 13%;
-    --popover-foreground: 42 52% 96%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 0 84% 55%;
+    --primary: 358 78% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 42 15% 22%;
-    --secondary-foreground: 42 52% 96%;
+    --secondary: 43 90% 45%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 20 12% 18%;
-    --muted-foreground: 42 20% 65%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 28 60% 35%;
-    --accent-foreground: 42 52% 96%;
+    --accent: 24 85% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 55%;
+    --destructive: 358 78% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 20 12% 20%;
