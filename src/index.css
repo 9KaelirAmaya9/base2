@@ -158,8 +158,10 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
-    background-image: var(--texture-paper);
-    background-attachment: fixed;
+    background-color: #fafaf8;
+    background-image: 
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px),
+      repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.02) 2px, rgba(0,0,0,.02) 4px);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -184,9 +186,12 @@ All colors MUST be HSL.
   
   .pattern-tile {
     position: relative;
-    background-image: var(--pattern-tile);
-    background-size: 80px 80px;
-    background-repeat: repeat;
+    background-image: 
+      radial-gradient(circle at 20% 50%, rgba(231, 30, 36, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 50%, rgba(246, 141, 46, 0.03) 0%, transparent 50%),
+      repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(87, 185, 71, 0.02) 40px, rgba(87, 185, 71, 0.02) 80px),
+      repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(251, 185, 19, 0.02) 40px, rgba(251, 185, 19, 0.02) 80px);
+    background-size: 200% 200%, 200% 200%, 80px 80px, 80px 80px;
   }
   
   .texture-warm {
@@ -197,9 +202,11 @@ All colors MUST be HSL.
     content: "";
     position: absolute;
     inset: 0;
-    background-image: var(--pattern-tile);
-    background-size: 80px 80px;
-    opacity: 0.6;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(231, 30, 36, 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 90% 80%, rgba(246, 141, 46, 0.04) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%23E31E24' stroke-width='1' opacity='0.05'/%3E%3Cpath d='M50 20 L60 45 L85 45 L65 60 L75 85 L50 70 L25 85 L35 60 L15 45 L40 45 Z' fill='%23F68D2E' opacity='0.03'/%3E%3C/svg%3E");
+    background-size: 100% 100%, 100% 100%, 100px 100px;
     pointer-events: none;
     z-index: 0;
   }
