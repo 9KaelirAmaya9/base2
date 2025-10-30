@@ -153,35 +153,35 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <div className="mb-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <img src={logo} alt="Ricos Tacos" className="h-16 w-16" />
-                  <h3 className="font-serif text-2xl font-bold text-[#E31E24]">Ricos Tacos</h3>
-                </div>
-                {/* Colorful stripe pattern */}
-                <div className="h-2 flex max-w-[200px] ml-[76px]">
-                  <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
-                  <div className="w-1 bg-black"></div>
-                  <div className="flex-1" style={{ backgroundColor: '#0071BC' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#57B947' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#FDB913' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#F68D2E' }}></div>
-                  <div className="w-1 bg-black"></div>
-                  <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#00BCD4' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
-                  <div className="w-1 bg-black"></div>
-                  <div className="flex-1" style={{ backgroundColor: '#0071BC' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#57B947' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#FDB913' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#F68D2E' }}></div>
-                  <div className="w-1 bg-black"></div>
-                  <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
-                  <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
+              <div className="flex items-center gap-3 mb-4">
+                <img src={logo} alt="Ricos Tacos" className="h-16 w-16" />
+                <div>
+                  <h3 className="font-serif text-2xl font-bold text-[#E31E24] mb-1">Ricos Tacos</h3>
+                  {/* Colorful stripe pattern */}
+                  <div className="h-2 flex">
+                    <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
+                    <div className="w-1 bg-black"></div>
+                    <div className="flex-1" style={{ backgroundColor: '#0071BC' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#57B947' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#FDB913' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#F68D2E' }}></div>
+                    <div className="w-1 bg-black"></div>
+                    <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#00BCD4' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
+                    <div className="w-1 bg-black"></div>
+                    <div className="flex-1" style={{ backgroundColor: '#0071BC' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#57B947' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#FDB913' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#F68D2E' }}></div>
+                    <div className="w-1 bg-black"></div>
+                    <div className="flex-1" style={{ backgroundColor: '#E31E24' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#FF1493' }}></div>
+                    <div className="flex-1" style={{ backgroundColor: '#92278F' }}></div>
+                  </div>
                 </div>
               </div>
               <p className="text-muted-foreground">
