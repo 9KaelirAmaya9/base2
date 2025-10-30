@@ -35,7 +35,7 @@ const Cart = () => {
     const orderSchema = z.object({
       name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
       phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(20, "Phone number is too long"),
-      email: z.string().trim().email("Invalid email format").max(255, "Email is too long").optional().or(z.literal("")),
+      email: z.string().trim().email("Invalid email format").max(255, "Email is too long"),
       address: z.string().trim().max(500, "Address is too long").optional().or(z.literal("")),
       notes: z.string().trim().max(1000, "Notes are too long").optional().or(z.literal("")),
     });
@@ -56,7 +56,7 @@ const Cart = () => {
 
     try {
       const subtotal = cartTotal;
-      const tax = subtotal * 0.08; // 8% tax
+      const tax = subtotal * 0.08875; // NYC sales tax: 8.875%
       const total = subtotal + tax;
 
       const { data: orderData, error } = await supabase
@@ -254,13 +254,13 @@ const Cart = () => {
                       </div>
 
                       <div>
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">Email *</Label>
                         <Input
                           id="email"
                           type="email"
                           value={customerInfo.email}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                          placeholder="your@email.com"
+                          placeholder="your@email.com (for order confirmation)"
                         />
                       </div>
 
@@ -290,9 +290,19 @@ const Cart = () => {
                     </div>
 
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center text-lg font-semibold pt-4 border-t border-border">
-                        <span>{t("order.total")}</span>
-                        <span className="text-primary">${cartTotal.toFixed(2)}</span>
+                      <div className="space-y-2 py-4 border-t border-border">
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span>${cartTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-muted-foreground">Tax (NYC 8.875%)</span>
+                          <span>${(cartTotal * 0.08875).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-lg font-semibold pt-2 border-t border-border">
+                          <span>{t("order.total")}</span>
+                          <span className="text-primary">${(cartTotal * 1.08875).toFixed(2)}</span>
+                        </div>
                       </div>
 
                       <Button 
