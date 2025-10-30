@@ -41,12 +41,23 @@ export const Navigation = () => {
               <span className="font-serif text-2xl md:text-3xl font-bold tracking-tight text-primary group-hover:text-primary/80 transition-colors">
                 Ricos Tacos
               </span>
-              <div className="flex items-center gap-0.5 mt-1.5 px-1 py-1 bg-gradient-to-r from-transparent via-muted/20 to-transparent rounded-full">
-                <div className="w-6 h-2 bg-gradient-to-br from-primary to-primary/80 rounded-full shadow-sm"></div>
-                <div className="w-5 h-2 bg-gradient-to-br from-lime-500 to-lime-600 rounded-full shadow-sm"></div>
-                <div className="w-6 h-2 bg-gradient-to-br from-golden-yellow to-golden-yellow/80 rounded-full shadow-sm"></div>
-                <div className="w-5 h-2 bg-gradient-to-br from-sage-green to-sage-green/80 rounded-full shadow-sm"></div>
-                <div className="w-6 h-2 bg-gradient-to-br from-cream to-cream/90 rounded-full shadow-sm"></div>
+              <div className="relative w-32 h-3 mt-1.5">
+                <svg viewBox="0 0 128 12" className="w-full h-full" preserveAspectRatio="none">
+                  <path d="M 0,8 Q 16,2 32,4 T 64,6 T 96,4 Q 112,2 128,8" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth="2" 
+                        fill="none" 
+                        strokeLinecap="round"/>
+                  <path d="M 0,9 Q 16,3 32,5 T 64,7 T 96,5 Q 112,3 128,9" 
+                        stroke="hsl(142 70% 45%)" 
+                        strokeWidth="1.5" 
+                        fill="none" 
+                        strokeLinecap="round" 
+                        opacity="0.7"/>
+                  <circle cx="32" cy="4" r="1.5" fill="hsl(var(--golden-yellow))"/>
+                  <circle cx="64" cy="6" r="1.5" fill="hsl(142 70% 45%)"/>
+                  <circle cx="96" cy="4" r="1.5" fill="hsl(var(--cream))"/>
+                </svg>
               </div>
             </div>
           </Link>
