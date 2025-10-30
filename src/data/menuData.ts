@@ -187,10 +187,15 @@ export const menuCategories = [
 
 export const menuItems: MenuItem[] = [
   // Desayunos Mexicanos (Mexican Breakfasts)
-  { id: "to7", name: "Jamon y Huevo", description: "Ham and fluffy scrambled eggs, breakfast perfection", price: 12.00, category: "Desayunos Mexicanos", image: tortaJamonHuevo },
-  { id: "to8", name: "Salchicha y Huevo", description: "Savory sausage with eggs on toasted roll", price: 12.00, category: "Desayunos Mexicanos", image: tortaSalchicha },
-  { id: "to9", name: "Chorizo con Huevo", description: "Spicy Mexican sausage with eggs and melted cheese", price: 12.00, category: "Desayunos Mexicanos", image: tortaChorizo },
-  { id: "p12", name: "Chilaquiles Rojos o Verdes con Cecina", description: "Crispy tortilla chips in salsa with salted beef and eggs", price: 14.95, category: "Desayunos Mexicanos", image: chilaquilesCecina },
+  { id: "d01", name: "Desayuno Ricos Tacos", description: "Eggs any style with tortillas, rice, beans and your choice of meat", price: 16.00, category: "Desayunos Mexicanos", image: tortaJamonHuevo },
+  { id: "to7", name: "Huevos con Jamon", description: "Ham and fluffy scrambled eggs with rice and beans", price: 12.00, category: "Desayunos Mexicanos", image: tortaJamonHuevo },
+  { id: "to8", name: "Huevos con Salchicha", description: "Eggs with hot dogs, served with rice and beans", price: 12.00, category: "Desayunos Mexicanos", image: tortaSalchicha },
+  { id: "to9", name: "Huevos con Chorizo", description: "Mexican sausage with eggs, rice and beans", price: 12.00, category: "Desayunos Mexicanos", image: tortaChorizo },
+  { id: "d02", name: "Huevos a la Mexicana", description: "Eggs with jalapeño, onions, and tomato, served with rice and beans", price: 12.00, category: "Desayunos Mexicanos" },
+  { id: "d03", name: "Huevos Rancheros", description: "Fried eggs over tortillas topped with salsa, served with rice and beans", price: 12.00, category: "Desayunos Mexicanos" },
+  { id: "d04", name: "Chilaquiles Regulares con Huevos", description: "Crispy tortilla chips in salsa with fried eggs, cream, onions and cheese", price: 11.95, category: "Desayunos Mexicanos", image: chilaquilesCecina },
+  { id: "p12", name: "Chilaquiles con Carne", description: "Crispy tortilla chips in salsa with grilled beef and fried eggs", price: 14.95, category: "Desayunos Mexicanos", image: chilaquilesCecina },
+  { id: "d05", name: "Chilaquiles con Carne y Huevos", description: "Crispy tortilla chips in salsa with meat and fried eggs, cream, onions and cheese", price: 17.95, category: "Desayunos Mexicanos", image: chilaquilesCecina },
   { id: "b5", name: "Burrito Chorizo", description: "Spicy Mexican sausage with eggs, beans, and cheese", price: 14.00, category: "Desayunos Mexicanos", image: burritoChorizo },
 
   // Carnes/Meats (Meat Options for Tacos)

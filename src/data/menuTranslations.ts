@@ -6,29 +6,59 @@ export const menuItemTranslations: Record<string, {
   descriptionEs: string 
 }> = {
   // Desayunos Mexicanos (Mexican Breakfasts)
+  "d01": { 
+    nameEn: "Ricos Tacos Breakfast", 
+    descriptionEn: "Eggs any style with tortillas, rice, beans and your choice of meat",
+    nameEs: "Desayuno Ricos Tacos", 
+    descriptionEs: "Huevos al gusto con tortillas, arroz, frijoles y tu elección de carne" 
+  },
   "to7": { 
-    nameEn: "Ham and Egg", 
-    descriptionEn: "Ham and fluffy scrambled eggs, breakfast perfection",
-    nameEs: "Jamón y Huevo", 
-    descriptionEs: "Jamón y huevos revueltos esponjosos, perfección del desayuno" 
+    nameEn: "Ham and Eggs", 
+    descriptionEn: "Ham and fluffy scrambled eggs with rice and beans",
+    nameEs: "Huevos con Jamón", 
+    descriptionEs: "Jamón y huevos revueltos esponjosos con arroz y frijoles" 
   },
   "to8": { 
-    nameEn: "Sausage and Egg", 
-    descriptionEn: "Savory sausage with eggs on toasted roll",
-    nameEs: "Salchicha y Huevo", 
-    descriptionEs: "Salchicha sabrosa con huevos en bolillo tostado" 
+    nameEn: "Sausage and Eggs", 
+    descriptionEn: "Eggs with hot dogs, served with rice and beans",
+    nameEs: "Huevos con Salchicha", 
+    descriptionEs: "Huevos con salchichas, servidos con arroz y frijoles" 
   },
   "to9": { 
-    nameEn: "Chorizo with Egg", 
-    descriptionEn: "Spicy Mexican sausage with eggs and melted cheese",
-    nameEs: "Chorizo con Huevo", 
-    descriptionEs: "Chorizo mexicano picante con huevos y queso derretido" 
+    nameEn: "Chorizo with Eggs", 
+    descriptionEn: "Mexican sausage with eggs, rice and beans",
+    nameEs: "Huevos con Chorizo", 
+    descriptionEs: "Chorizo mexicano con huevos, arroz y frijoles" 
+  },
+  "d02": { 
+    nameEn: "Mexican-Style Eggs", 
+    descriptionEn: "Eggs with jalapeño, onions, and tomato, served with rice and beans",
+    nameEs: "Huevos a la Mexicana", 
+    descriptionEs: "Huevos con jalapeño, cebolla y tomate, servidos con arroz y frijoles" 
+  },
+  "d03": { 
+    nameEn: "Ranchero Eggs", 
+    descriptionEn: "Fried eggs over tortillas topped with salsa, served with rice and beans",
+    nameEs: "Huevos Rancheros", 
+    descriptionEs: "Huevos fritos sobre tortillas con salsa, servidos con arroz y frijoles" 
+  },
+  "d04": { 
+    nameEn: "Regular Chilaquiles with Eggs", 
+    descriptionEn: "Crispy tortilla chips in salsa with fried eggs, cream, onions and cheese",
+    nameEs: "Chilaquiles Regulares con Huevos", 
+    descriptionEs: "Totopos crujientes en salsa con huevos fritos, crema, cebolla y queso" 
   },
   "p12": { 
-    nameEn: "Red or Green Chilaquiles with Cecina", 
-    descriptionEn: "Crispy tortilla chips in salsa with salted beef and eggs",
-    nameEs: "Chilaquiles Rojos o Verdes con Cecina", 
-    descriptionEs: "Totopos crujientes en salsa con cecina y huevos" 
+    nameEn: "Chilaquiles with Meat", 
+    descriptionEn: "Crispy tortilla chips in salsa with grilled beef and fried eggs",
+    nameEs: "Chilaquiles con Carne", 
+    descriptionEs: "Totopos crujientes en salsa con carne asada y huevos fritos" 
+  },
+  "d05": { 
+    nameEn: "Chilaquiles with Meat and Eggs", 
+    descriptionEn: "Crispy tortilla chips in salsa with meat and fried eggs, cream, onions and cheese",
+    nameEs: "Chilaquiles con Carne y Huevos", 
+    descriptionEs: "Totopos crujientes en salsa con carne y huevos fritos, crema, cebolla y queso" 
   },
   "b5": { 
     nameEn: "Chorizo Burrito", 

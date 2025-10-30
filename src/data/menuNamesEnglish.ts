@@ -2,10 +2,15 @@
 // The menuData.ts file has Spanish names as defaults, so we need English translations
 export const menuItemNamesEnglish: Record<string, string> = {
   // Desayunos Mexicanos
-  "to7": "Ham and Egg",
-  "to8": "Sausage and Egg",
-  "to9": "Chorizo with Egg",
-  "p12": "Red or Green Chilaquiles with Cecina",
+  "d01": "Ricos Tacos Breakfast",
+  "to7": "Ham and Eggs",
+  "to8": "Sausage and Eggs",
+  "to9": "Chorizo with Eggs",
+  "d02": "Mexican-Style Eggs",
+  "d03": "Ranchero Eggs",
+  "d04": "Regular Chilaquiles with Eggs",
+  "p12": "Chilaquiles with Meat",
+  "d05": "Chilaquiles with Meat and Eggs",
   "b5": "Chorizo Burrito",
 
   // Carnes/Meats
