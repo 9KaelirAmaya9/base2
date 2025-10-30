@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Minus, ShoppingCart, Star } from "lucide-react";
+import { Plus, Star } from "lucide-react";
+import { FloatingCartButton } from "@/components/FloatingCartButton";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -18,8 +19,7 @@ import { cn } from "@/lib/utils";
 
 const Order = () => {
   const { t, language } = useLanguage();
-  const navigate = useNavigate();
-  const { cart, orderType, setOrderType, addToCart, updateQuantity, cartTotal, cartCount } = useCart();
+  const { orderType, setOrderType, addToCart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState("All");
 
   // Group items by category
@@ -33,17 +33,10 @@ const Order = () => {
       }, {} as Record<string, typeof menuItems>)
     : { [selectedCategory]: menuItems.filter(item => item.category === selectedCategory) };
 
-  const handleCheckout = () => {
-    if (cart.length === 0) {
-      toast.error(t("order.cartEmpty"));
-      return;
-    }
-    navigate("/cart");
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <Navigation />
+      <FloatingCartButton />
       
       <div className="pt-32 pb-20">
         <div className="container mx-auto px-4">
@@ -65,9 +58,8 @@ const Order = () => {
             </Tabs>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Menu Items */}
-            <div className="lg:col-span-2 space-y-6">
+          {/* Menu Items - Full Width */}
+          <div className="space-y-6">
               {/* Category Filter */}
               <div className="flex items-center gap-4">
                 <label className="text-sm font-medium">{t("order.filterBy")}</label>
@@ -193,84 +185,6 @@ const Order = () => {
                   return <CategorySection key={category} />;
                 })}
               </div>
-            </div>
-
-            {/* Cart Sidebar */}
-            <div className="lg:col-span-1">
-              <Card className="p-6 sticky top-32">
-                <div className="flex items-center gap-2 mb-6">
-                  <ShoppingCart className="h-5 w-5" />
-                  <h2 className="font-serif text-2xl font-semibold">{t("order.yourOrder")}</h2>
-                  {cartCount > 0 && (
-                    <span className="ml-auto bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
-                      {cartCount}
-                    </span>
-                  )}
-                </div>
-
-                {cart.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                    <p>{t("order.emptyCart")}</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-4 mb-6 max-h-[400px] overflow-y-auto">
-                      {cart.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3 pb-3 border-b border-border">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{item.name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              ${item.price.toFixed(2)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, -1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="w-8 text-center font-medium">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center text-lg font-semibold pt-4 border-t border-border">
-                        <span>{t("order.total")}</span>
-                        <span className="text-primary">${cartTotal.toFixed(2)}</span>
-                      </div>
-
-                      <Button 
-                        className="w-full" 
-                        size="lg"
-                        onClick={handleCheckout}
-                      >
-                        {t("order.checkout")}
-                      </Button>
-
-                      <p className="text-xs text-center text-muted-foreground">
-                        {orderType === "delivery" ? t("order.deliveryNote") : t("order.pickupNote")}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </Card>
-            </div>
           </div>
         </div>
       </div>
