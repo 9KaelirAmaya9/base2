@@ -214,16 +214,86 @@ All colors MUST be HSL.
     animation: color-pulse 3s ease-in-out infinite;
   }
 
-  @keyframes confetti-fall {
-    0% {
-      transform: translateY(-100vh) rotate(0deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(100vh) rotate(720deg);
-      opacity: 0;
-    }
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
   }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes float-ingredient {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(var(--serape-red) / 0.3),
+                0 0 40px hsl(var(--serape-yellow) / 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px hsl(var(--serape-red) / 0.5),
+                0 0 60px hsl(var(--serape-yellow) / 0.3),
+                0 0 80px hsl(var(--serape-pink) / 0.2);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes serape-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes stripe-shimmer {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes float-shape {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -30px) rotate(120deg);
+  }
+  66% {
+    transform: translate(-20px, 20px) rotate(240deg);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
   .confetti-bg {
     position: fixed;
@@ -252,6 +322,42 @@ All colors MUST be HSL.
       linear-gradient(-45deg, transparent 75%, hsl(var(--serape-orange) / 0.03) 75%);
     background-size: 60px 60px;
     background-position: 0 0, 0 30px, 30px -30px, -30px 0px;
+  }
+
+  .scroll-animate {
+    opacity: 0;
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+
+  .serape-glow {
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .serape-glow:hover {
+    box-shadow: 0 0 30px hsl(var(--serape-red) / 0.4),
+                0 0 50px hsl(var(--serape-yellow) / 0.3),
+                0 0 70px hsl(var(--serape-pink) / 0.2);
+  }
+
+  .serape-border-flow {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--serape-red)),
+      hsl(var(--serape-pink)),
+      hsl(var(--serape-purple)),
+      hsl(var(--serape-blue)),
+      hsl(var(--serape-green)),
+      hsl(var(--serape-yellow)),
+      hsl(var(--serape-orange)),
+      hsl(var(--serape-red))
+    );
+    background-size: 200% 200%;
+    animation: serape-flow 8s ease infinite;
+  }
+
+  .pulse-glow-btn {
+    animation: pulse-glow 2s ease-in-out infinite;
   }
   
   .font-serif {

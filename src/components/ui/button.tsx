@@ -16,6 +16,8 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         premium: "bg-gradient-to-r from-rico-red to-rico-red-dark text-primary-foreground hover:shadow-elegant hover:scale-105",
+        glow: "bg-gradient-to-r from-serape-red via-serape-pink to-serape-purple text-primary-foreground serape-glow hover:scale-105",
+        pulse: "bg-gradient-to-r from-serape-yellow via-serape-orange to-serape-red text-primary-foreground shadow-elegant"
       },
       size: {
         default: "h-10 px-4 py-2",

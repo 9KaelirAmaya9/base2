@@ -1,6 +1,6 @@
 export const SerapeStripe = () => {
   return (
-    <div className="h-3 w-full flex">
+    <div className="h-3 w-full flex" style={{ animation: 'stripe-shimmer 3s ease-in-out infinite' }}>
       <div className="flex-1 animate-color-pulse" style={{ backgroundColor: '#00BCD4' }}></div>
       <div className="flex-1 animate-color-pulse" style={{ backgroundColor: '#E31E24', animationDelay: '0.1s' }}></div>
       <div className="flex-1 animate-color-pulse" style={{ backgroundColor: '#FF1493', animationDelay: '0.2s' }}></div>
