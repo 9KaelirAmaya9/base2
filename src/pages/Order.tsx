@@ -60,7 +60,7 @@ const Order = () => {
     : { [selectedCategory]: menuItems.filter(item => item.category === selectedCategory) };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 festive-pattern relative">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 relative">
       <ConfettiBackground />
       <Navigation />
       
