@@ -78,8 +78,9 @@ export const Navigation = () => {
               <NavigationMenuList>
                 <NavigationMenuItem>
                   <Link to="/">
-                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-colors ${isActive("/") ? "text-primary" : "text-foreground hover:text-primary"}`}>
+                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${isActive("/") ? "text-primary" : "text-foreground hover:text-serape-red"}`}>
                       {t("nav.home")}
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-cyan via-serape-pink to-serape-yellow scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
@@ -114,16 +115,18 @@ export const Navigation = () => {
 
                 <NavigationMenuItem>
                   <Link to="/order">
-                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-colors ${isActive("/order") ? "text-primary" : "text-foreground hover:text-primary"}`}>
+                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${isActive("/order") ? "text-primary" : "text-foreground hover:text-serape-pink"}`}>
                       {t("nav.orderOnline")}
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-pink via-serape-purple to-serape-blue scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
                   <Link to="/location">
-                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-colors ${isActive("/location") ? "text-primary" : "text-foreground hover:text-primary"}`}>
+                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${isActive("/location") ? "text-primary" : "text-foreground hover:text-serape-green"}`}>
                       {t("nav.location")}
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-green via-serape-yellow to-serape-orange scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>

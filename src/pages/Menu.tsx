@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { SerapeStripe } from "@/components/SerapeStripe";
+import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { menuItems, menuCategories } from "@/data/menuData";
 import { getMenuItemName, getMenuItemDescription } from "@/data/menuTranslations";
 import { getCategoryTranslation } from "@/data/translations";
@@ -48,7 +49,8 @@ const Menu = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 festive-pattern relative">
+      <ConfettiBackground />
       <SerapeStripe />
       <Navigation />
       
@@ -107,19 +109,19 @@ const Menu = () => {
                             )}
                           </div>
                           
-                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                            <span className="text-2xl font-semibold text-primary">
-                              ${item.price.toFixed(2)}
-                            </span>
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleAddToCart(item)}
-                              className="gap-2"
-                            >
-                              <Plus className="h-4 w-4" />
-                              {t("menu.add")}
-                            </Button>
-                          </div>
+                           <div className="flex items-center justify-between mt-4 pt-4 border-t border-serape-red/20">
+                             <span className="text-2xl font-semibold bg-gradient-to-r from-serape-red via-serape-pink to-serape-purple bg-clip-text text-transparent drop-shadow-sm">
+                               ${item.price.toFixed(2)}
+                             </span>
+                             <Button 
+                               size="sm" 
+                               onClick={() => handleAddToCart(item)}
+                               className="gap-2 bg-gradient-to-r from-serape-red to-serape-pink hover:from-serape-pink hover:to-serape-purple shadow-elegant"
+                             >
+                               <Plus className="h-4 w-4" />
+                               {t("menu.add")}
+                             </Button>
+                           </div>
                         </div>
                       </Card>
                     ))}

@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/Navigation";
+import { ConfettiBackground } from "@/components/ConfettiBackground";
 import { menuItems, menuCategories } from "@/data/menuData";
 import { getMenuItemName, getMenuItemDescription } from "@/data/menuTranslations";
 import { getCategoryTranslation } from "@/data/translations";
@@ -59,7 +60,8 @@ const Order = () => {
     : { [selectedCategory]: menuItems.filter(item => item.category === selectedCategory) };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 festive-pattern relative">
+      <ConfettiBackground />
       <Navigation />
       
       <div className="pt-24 sm:pt-28 md:pt-32 pb-16 sm:pb-20">
@@ -112,13 +114,22 @@ const Order = () => {
                       <div key={category} ref={ref}>
                         {/* Category Header */}
                         <div className={cn(
-                          "mb-6 transition-all duration-700",
+                          "mb-6 transition-all duration-700 relative",
                           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                         )}>
-                          <h2 className="font-serif text-3xl font-bold text-foreground mb-2">
+                          <h2 className="font-serif text-3xl font-bold bg-gradient-to-r from-serape-red via-serape-pink to-serape-purple bg-clip-text text-transparent mb-2">
                             {getCategoryTranslation(language, category)}
                           </h2>
-                          <div className="h-1 w-20 bg-primary rounded-full"></div>
+                          <div className="h-1 w-full max-w-xs rounded-full overflow-hidden flex">
+                            <div className="flex-1 bg-serape-cyan"></div>
+                            <div className="flex-1 bg-serape-red"></div>
+                            <div className="flex-1 bg-serape-pink"></div>
+                            <div className="flex-1 bg-serape-purple"></div>
+                            <div className="flex-1 bg-serape-blue"></div>
+                            <div className="flex-1 bg-serape-green"></div>
+                            <div className="flex-1 bg-serape-yellow"></div>
+                            <div className="flex-1 bg-serape-orange"></div>
+                          </div>
                         </div>
 
                         {/* Items Grid */}
@@ -140,40 +151,44 @@ const Order = () => {
                                   style={{ transitionDelay: `${index * 50}ms` }}
                                 >
                                   <Card className="overflow-hidden hover:shadow-elegant transition-all duration-300 group flex flex-col border-2 border-transparent hover:border-primary/10 bg-card h-full">
-                                     {item.image && (
-                                       <div className="relative h-32 overflow-hidden flex-shrink-0">
-                                        <img 
-                                          src={item.image} 
-                                          alt={item.name}
-                                          loading="lazy"
-                                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                        {item.bestSeller && (
-                                          <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground shadow-elegant gap-1">
-                                            <Star className="h-3 w-3 fill-current" />
-                                            Best Seller
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    )}
+                     {item.image && (
+                       <div className="relative h-32 overflow-hidden flex-shrink-0">
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-serape-red/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        {/* AI Generated watermark */}
+                        <div className="absolute bottom-2 right-2 text-[8px] text-white/30 font-mono tracking-tight backdrop-blur-[2px] px-1.5 py-0.5 rounded bg-black/10">
+                          AI
+                        </div>
+                        {item.bestSeller && (
+                          <Badge className="absolute top-2 right-2 bg-gradient-to-r from-serape-yellow to-serape-orange text-white shadow-glow gap-1 border-0">
+                            <Star className="h-3 w-3 fill-current" />
+                            Best Seller
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                                     <div className="p-5 flex flex-col flex-1 bg-card">
-                                      <div className="flex items-start justify-between mb-2">
-                                        <div className="flex-1">
-                                          <h3 className="font-serif text-lg font-semibold">
-                                            {getMenuItemName(item.id, language, item.name)}
-                                          </h3>
-                                          {item.bestSeller && !item.image && (
-                                            <Badge variant="secondary" className="mt-1 gap-1">
-                                              <Star className="h-3 w-3 fill-current" />
-                                              Best Seller
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        <span className="text-lg font-semibold text-primary whitespace-nowrap ml-2">
-                                          ${item.price.toFixed(2)}
-                                        </span>
-                                      </div>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h3 className="font-serif text-lg font-semibold">
+                              {getMenuItemName(item.id, language, item.name)}
+                            </h3>
+                            {item.bestSeller && !item.image && (
+                              <Badge className="mt-1 gap-1 bg-gradient-to-r from-serape-yellow to-serape-orange text-white border-0">
+                                <Star className="h-3 w-3 fill-current" />
+                                Best Seller
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-lg font-semibold bg-gradient-to-r from-serape-red via-serape-pink to-serape-purple bg-clip-text text-transparent whitespace-nowrap ml-2 drop-shadow-sm">
+                            ${item.price.toFixed(2)}
+                          </span>
+                        </div>
                                       {item.description && (
                                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                                           {getMenuItemDescription(item.id, language, item.description)}
