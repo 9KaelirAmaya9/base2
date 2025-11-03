@@ -99,16 +99,6 @@ export const Navigation = () => {
                           </NavigationMenuLink>
                         </Link>
                       </li>
-                      <li>
-                        <Link to="/location">
-                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">{t("nav.hoursLocation")}</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              {t("nav.hoursDesc")}
-                            </p>
-                          </NavigationMenuLink>
-                        </Link>
-                      </li>
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
