@@ -77,38 +77,38 @@ export const Navigation = () => {
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <Link to="/">
-                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${isActive("/") ? "text-primary" : "text-foreground"}`}>
+                  <Link to="/" className="relative group">
+                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 ${isActive("/") ? "text-primary" : "text-foreground"}`}>
                       {t("nav.home")}
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-cyan via-serape-pink to-serape-yellow scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                     </NavigationMenuLink>
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-cyan via-serape-pink to-serape-yellow scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link to="/menu">
-                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${isActive("/menu") ? "text-primary" : "text-foreground"}`}>
+                  <Link to="/menu" className="relative group">
+                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 ${isActive("/menu") ? "text-primary" : "text-foreground"}`}>
                       {t("nav.fullMenu")}
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-red via-serape-orange to-serape-yellow scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                     </NavigationMenuLink>
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-red via-serape-orange to-serape-yellow scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link to="/order">
-                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${isActive("/order") ? "text-primary" : "text-foreground"}`}>
+                  <Link to="/order" className="relative group">
+                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 ${isActive("/order") ? "text-primary" : "text-foreground"}`}>
                       {t("nav.orderOnline")}
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-pink via-serape-purple to-serape-blue scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                     </NavigationMenuLink>
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-pink via-serape-purple to-serape-blue scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link to="/location">
-                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 relative group ${isActive("/location") ? "text-primary" : "text-foreground"}`}>
+                  <Link to="/location" className="relative group">
+                    <NavigationMenuLink className={`px-4 py-2 text-sm font-medium transition-all duration-300 ${isActive("/location") ? "text-primary" : "text-foreground"}`}>
                       {t("nav.location")}
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-green via-serape-yellow to-serape-orange scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                     </NavigationMenuLink>
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-serape-green via-serape-yellow to-serape-orange scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                   </Link>
                 </NavigationMenuItem>
               </NavigationMenuList>
