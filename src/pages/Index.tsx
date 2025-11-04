@@ -95,36 +95,52 @@ const Index = () => {
         <PapelPicado />
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
-            <article className="space-y-4 sm:space-y-6 animate-on-scroll">
+          <div className="max-w-4xl mx-auto text-center animate-on-scroll">
+            {/* Logo Symbol */}
+            <div className="flex justify-center mb-6 sm:mb-8">
+              <img 
+                src={logo} 
+                alt="Ricos Tacos Brooklyn emblem" 
+                className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 drop-shadow-lg"
+                loading="lazy"
+                width="96"
+                height="96"
+              />
+            </div>
+            
+            {/* About Content */}
+            <article className="space-y-4 sm:space-y-6">
               <h2 id="about-heading" className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-foreground">
                 {t("home.about.title1")}
                 <br />
                 <span className="bg-gradient-to-r from-serape-purple via-serape-blue to-serape-green bg-clip-text text-transparent">{t("home.about.title2")}</span>
               </h2>
-              <p className="text-muted-foreground leading-relaxed text-base sm:text-lg">
+              <p className="text-muted-foreground leading-relaxed text-base sm:text-lg max-w-3xl mx-auto">
                 {t("home.about.p1")}
               </p>
-              <p className="text-muted-foreground leading-relaxed text-base sm:text-lg">
+              <p className="text-muted-foreground leading-relaxed text-base sm:text-lg max-w-3xl mx-auto">
                 {t("home.about.p2")}
               </p>
+              
+              {/* Restaurant Interior Image */}
+              <div className="relative h-[300px] sm:h-[400px] md:h-[450px] rounded-2xl overflow-hidden shadow-elegant group mt-8 sm:mt-10">
+                <div className="absolute inset-0 serape-border-flow opacity-0 group-hover:opacity-30 transition-opacity duration-500 z-10 pointer-events-none"></div>
+                <img 
+                  src={interiorImage} 
+                  alt="Traditional Puebla-style Mexican restaurant interior with authentic decor at Ricos Tacos Brooklyn" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
+                  width="800"
+                  height="500"
+                />
+              </div>
+              
               <Link to="/menu" aria-label="Explore our authentic Mexican menu">
-                <Button size="lg" variant="glow" className="mt-4 sm:mt-6 w-full sm:w-auto">
+                <Button size="lg" variant="glow" className="mt-6 sm:mt-8 w-full sm:w-auto">
                   {t("home.about.exploreMenu")}
                 </Button>
               </Link>
             </article>
-            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-elegant group animate-on-scroll">
-              <div className="absolute inset-0 serape-border-flow opacity-0 group-hover:opacity-30 transition-opacity duration-500 z-10 pointer-events-none"></div>
-              <img 
-                src={interiorImage} 
-                alt="Traditional Puebla-style Mexican restaurant interior with authentic decor at Ricos Tacos Brooklyn" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                loading="lazy"
-                width="800"
-                height="500"
-              />
-            </div>
           </div>
         </div>
       </section>
