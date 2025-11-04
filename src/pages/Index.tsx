@@ -82,7 +82,7 @@ const Index = () => {
       </section>
 
       {/* About Section */}
-      <section className="pt-0 pb-12 sm:pb-16 md:pb-20 bg-gradient-to-b from-background to-muted/30 texture-warm relative overflow-hidden" aria-labelledby="about-heading">
+      <section className="-mt-[18vh] sm:-mt-[20vh] md:-mt-[22vh] lg:-mt-[24vh] xl:-mt-[26vh] pt-0 pb-12 sm:pb-16 md:pb-20 bg-transparent relative overflow-hidden" aria-labelledby="about-heading">
         <FloatingShapes />
         {/* Decorative corner accents with flowing border */}
         <div className="absolute top-0 left-0 w-24 h-24 rounded-br-full overflow-hidden" aria-hidden="true">
@@ -95,8 +95,8 @@ const Index = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           {/* Decorative symbol integrated on the left of the section */}
-          <div className="pointer-events-none hidden md:block absolute -left-12 lg:-left-16 top-8 opacity-90" aria-hidden="true">
-            <img src={logo} alt="" className="w-20 lg:w-24 h-auto drop-shadow-glow" loading="lazy" width="96" height="96" />
+          <div className="pointer-events-none hidden md:block absolute -left-12 lg:-left-16 top-1/2 -translate-y-1/2 opacity-90" aria-hidden="true">
+            <img src={logo} alt="" className="w-28 lg:w-36 h-auto drop-shadow-glow" loading="lazy" width="144" height="144" />
           </div>
           <div className="grid md:grid-cols-2 gap-8 sm:gap-12 items-center">
             <article className="space-y-4 sm:space-y-6 animate-on-scroll">
