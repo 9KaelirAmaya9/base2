@@ -49,14 +49,14 @@ export const FloatingContactButton = () => {
         size="lg"
         variant="premium"
         className={cn(
-          "rounded-full h-16 w-16 p-0 shadow-elegant transition-transform duration-300",
-          isExpanded && "rotate-45"
+          "rounded-full h-20 w-20 p-0 shadow-[0_0_40px_rgba(220,38,38,0.6)] hover:shadow-[0_0_50px_rgba(220,38,38,0.8)] transition-all duration-300 animate-pulse",
+          isExpanded && "rotate-45 animate-none"
         )}
       >
         {isExpanded ? (
-          <span className="text-2xl">✕</span>
+          <span className="text-3xl">✕</span>
         ) : (
-          <Phone className="h-6 w-6" />
+          <Phone className="h-8 w-8" />
         )}
       </Button>
     </div>
