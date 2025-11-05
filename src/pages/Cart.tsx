@@ -80,11 +80,12 @@ const Cart = () => {
       const tax = subtotal * 0.08875; // NYC sales tax: 8.875%
       const total = subtotal + tax;
 
-      // Create order first to get order number
-      const { data: orderData, error } = await supabase
+      // Generate order number on client to avoid needing SELECT permissions
+      const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const { error } = await supabase
         .from("orders")
         .insert([{
-          order_number: "",
+          order_number: orderNumber,
           customer_name: validation.data.name,
           customer_email: validation.data.email || null,
           customer_phone: validation.data.phone,
@@ -96,9 +97,7 @@ const Cart = () => {
           total,
           notes: validation.data.notes || null,
           status: "pending_payment",
-        }])
-        .select()
-        .single();
+        }], { returning: 'minimal' } as any);
 
       if (error) throw error;
 
@@ -110,7 +109,7 @@ const Cart = () => {
             items: cart,
             orderType,
             customerInfo: validation.data,
-            orderNumber: orderData.order_number,
+            orderNumber,
           }
         }
       );
