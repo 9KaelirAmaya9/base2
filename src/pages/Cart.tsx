@@ -74,7 +74,8 @@ const Cart = () => {
     }
 
     setIsProcessing(true);
-
+    
+    let checkoutTab: Window | null = null;
     try {
       const subtotal = cartTotal;
       const tax = subtotal * 0.08875; // NYC sales tax: 8.875%
@@ -101,7 +102,11 @@ const Cart = () => {
 
       if (error) throw error;
 
-      // Create Stripe checkout session
+      // Open a new tab immediately to avoid popup blockers, then create Stripe checkout session
+      checkoutTab = window.open('about:blank', '_blank', 'noopener,noreferrer');
+      if (checkoutTab) {
+        checkoutTab.document.write('Redirecting to secure checkout...');
+      }
       const { data: sessionData, error: sessionError } = await supabase.functions.invoke(
         'create-checkout-session',
         {
@@ -116,15 +121,21 @@ const Cart = () => {
 
       if (sessionError) throw sessionError;
 
-      // Redirect to Stripe checkout
+      // Redirect to Stripe checkout (prefer new tab to avoid iframe/csp issues)
       if (sessionData?.url) {
-        window.location.href = sessionData.url;
+        if (checkoutTab) {
+          checkoutTab.location.href = sessionData.url;
+        } else {
+          window.open(sessionData.url, '_blank', 'noopener,noreferrer') || (window.location.href = sessionData.url);
+        }
       } else {
-        throw new Error("No checkout URL received");
+        if (checkoutTab) checkoutTab.close();
+        throw new Error('No checkout URL received');
       }
 
     } catch (error: any) {
       console.error("Order error:", error);
+      if (checkoutTab) checkoutTab.close();
       toast.error("Failed to process payment. Please try again.");
       setIsProcessing(false);
     }
