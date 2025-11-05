@@ -96,7 +96,7 @@ const Cart = () => {
           tax,
           total,
           notes: validation.data.notes || null,
-          status: "pending_payment",
+          status: "pending",
         }], { returning: 'minimal' } as any);
 
       if (error) throw error;
