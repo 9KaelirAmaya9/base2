@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
-import EmbeddedCheckoutModal from "@/components/checkout/EmbeddedCheckoutModal";
+import SecurePaymentModal from "@/components/checkout/SecurePaymentModal";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -124,9 +124,9 @@ const Cart = () => {
 
       if (error) throw error;
 
-      // Create Embedded Checkout session (Stripe-hosted UI inside modal)
-      const { data: ecData, error: ecError } = await supabase.functions.invoke(
-        'create-embedded-checkout',
+      // Create PaymentIntent for secure modal checkout
+      const { data: piData, error: piError } = await supabase.functions.invoke(
+        'create-payment-intent',
         {
           body: {
             items: cart,
@@ -137,17 +137,17 @@ const Cart = () => {
         }
       );
 
-      if (ecError) throw ecError;
+      if (piError) throw piError;
 
-      if (ecData?.clientSecret && ecData?.publishableKey) {
+      if (piData?.clientSecret && piData?.publishableKey) {
         setCurrentOrderNumber(orderNumber);
-        setCheckoutClientSecret(ecData.clientSecret as string);
-        setCheckoutPublishableKey(ecData.publishableKey as string);
+        setCheckoutClientSecret(piData.clientSecret as string);
+        setCheckoutPublishableKey(piData.publishableKey as string);
         setShowCheckout(true);
         setIsProcessing(false);
         return;
       } else {
-        throw new Error('Failed to create embedded checkout');
+        throw new Error('Failed to create payment intent');
       }
 
 
@@ -363,14 +363,26 @@ const Cart = () => {
                         {isProcessing ? "Processing..." : "Pay with Stripe"}
                       </Button>
 
-                      {checkoutClientSecret && checkoutPublishableKey && (
-                        <EmbeddedCheckoutModal
+                      {checkoutClientSecret && checkoutPublishableKey && currentOrderNumber && (
+                        <SecurePaymentModal
                           open={showCheckout}
                           onOpenChange={setShowCheckout}
                           clientSecret={checkoutClientSecret}
                           publishableKey={checkoutPublishableKey}
-                          title="Secure Payment"
-                          description={`Order ${currentOrderNumber || ''}`}
+                          orderNumber={currentOrderNumber}
+                          customerInfo={customerInfo}
+                          orderType={orderType}
+                          cartTotal={cartTotal}
+                          onSuccess={() => {
+                            toast.success(`Payment successful! Order #${currentOrderNumber} confirmed.`);
+                            clearCart();
+                            setCustomerInfo({ name: "", phone: "", email: "", address: "", notes: "" });
+                            window.history.replaceState({}, '', '/cart');
+                            setShowCheckout(false);
+                            setCheckoutClientSecret(null);
+                            setCheckoutPublishableKey(null);
+                            setCurrentOrderNumber(null);
+                          }}
                         />
                       )}
 
