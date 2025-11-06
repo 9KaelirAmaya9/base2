@@ -48,20 +48,6 @@ const Cart = () => {
     }
   }, [searchParams, clearCart]);
 
-  // Fallback: if automatic redirect is blocked in sandbox, open Checkout in a new tab after a brief delay
-  useEffect(() => {
-    if (!checkoutUrl) return;
-    const t = setTimeout(() => {
-      try {
-        if (document.visibilityState === 'visible') {
-          window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
-        }
-      } catch {
-        // ignore
-      }
-    }, 800);
-    return () => clearTimeout(t);
-  }, [checkoutUrl]);
   const handlePlaceOrder = async () => {
     if (cart.length === 0) {
       toast.error(t("order.cartEmpty"));
@@ -95,17 +81,6 @@ const Cart = () => {
 
     setIsProcessing(true);
 
-    // Open a placeholder tab immediately on user interaction to bypass popup blockers
-    let checkoutTab: Window | null = null;
-    try {
-      checkoutTab = window.open('', '_blank', 'noopener');
-      if (checkoutTab && checkoutTab.document) {
-        checkoutTab.document.write('<!doctype html><title>Redirecting…</title><body style="font-family:sans-serif;padding:20px;">Redirecting to secure payment…</body>');
-      }
-    } catch {
-      // ignore
-    }
-    
     try {
       const subtotal = cartTotal;
       const tax = subtotal * 0.08875; // NYC sales tax: 8.875%
