@@ -144,27 +144,41 @@ const Cart = () => {
           anchor.click();
           anchor.remove();
         } catch (_) {
-          // Fallbacks if anchor navigation is blocked
-          try {
-            if (window.top && window.top !== window) {
-              window.top.location.href = checkoutUrl;
-            } else {
-              window.location.assign(checkoutUrl);
-            }
-          } catch {
-            window.location.href = checkoutUrl;
-          }
+          // ignore; fallback below
         }
-        // Final safety fallback in case the browser ignored the click
+
+        // Stripe.js fallback to handle sandboxed iframes more reliably
+        try {
+          const maybeStripe = (window as any).Stripe;
+          if (sessionData?.publishableKey && sessionData?.id && typeof maybeStripe === 'function') {
+            const stripe = maybeStripe(sessionData.publishableKey);
+            stripe.redirectToCheckout({ sessionId: sessionData.id });
+          }
+        } catch {
+          // ignore
+        }
+
+        // Additional fallbacks
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = checkoutUrl;
+          } else {
+            window.location.assign(checkoutUrl);
+          }
+        } catch {
+          window.location.href = checkoutUrl;
+        }
+
+        // Final safety fallback in case the browser ignored the above
         setTimeout(() => {
           if (document.visibilityState === 'visible') {
             try {
-              window.location.href = checkoutUrl;
+              window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
             } catch {
-              /* ignore */
+              try { window.location.href = checkoutUrl; } catch { /* ignore */ }
             }
           }
-        }, 300);
+        }, 500);
       } else {
         throw new Error('No checkout URL received');
       }

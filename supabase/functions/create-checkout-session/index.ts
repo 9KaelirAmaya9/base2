@@ -66,7 +66,7 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ url: session.url }),
+      JSON.stringify({ url: session.url, id: session.id, publishableKey: Deno.env.get('STRIPE_PUBLISHABLE_KEY') || undefined }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
