@@ -42,7 +42,7 @@ serve(async (req) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: "usd",
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ['card'],
       receipt_email: customerInfo?.email || undefined,
       metadata: {
         order_number: orderNumber || "",
