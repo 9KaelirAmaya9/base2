@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import CheckoutModal from "@/components/checkout/CheckoutModal";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -27,6 +28,10 @@ const Cart = () => {
     notes: "",
   });
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [checkoutClientSecret, setCheckoutClientSecret] = useState<string | null>(null);
+  const [checkoutPublishableKey, setCheckoutPublishableKey] = useState<string | null>(null);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [currentOrderNumber, setCurrentOrderNumber] = useState<string | null>(null);
 
   useEffect(() => {
     const success = searchParams.get("success");
@@ -127,9 +132,9 @@ const Cart = () => {
 
       if (error) throw error;
 
-      // Create Stripe checkout session
-      const { data: sessionData, error: sessionError } = await supabase.functions.invoke(
-        'create-checkout-session',
+      // Create PaymentIntent for in-app modal checkout
+      const { data: piData, error: piError } = await supabase.functions.invoke(
+        'create-payment-intent',
         {
           body: {
             items: cart,
@@ -140,72 +145,17 @@ const Cart = () => {
         }
       );
 
-      if (sessionError) throw sessionError;
+      if (piError) throw piError;
 
-      // Navigate to Stripe Checkout; prefer navigating the pre-opened tab
-      if (sessionData?.url) {
-        const checkoutUrl = sessionData.url as string;
-        setCheckoutUrl(checkoutUrl);
-
-        // If we managed to open a tab synchronously, navigate it directly
-        try {
-          // Navigate opened tab if present
-          if (checkoutTab && !checkoutTab.closed) {
-            checkoutTab.location.href = checkoutUrl;
-            return; // Stop here, tab is navigating
-          }
-        } catch {
-          // ignore and try other strategies
-        }
-
-        // Anchor navigation to top frame
-        try {
-          const anchor = document.createElement('a');
-          anchor.href = checkoutUrl;
-          anchor.target = '_top';
-          anchor.rel = 'noopener noreferrer';
-          document.body.appendChild(anchor);
-          anchor.click();
-          anchor.remove();
-        } catch {
-          // ignore; fallback below
-        }
-
-        // Stripe.js fallback (if available)
-        try {
-          const maybeStripe = (window as any).Stripe;
-          if (sessionData?.publishableKey && sessionData?.id && typeof maybeStripe === 'function') {
-            const stripe = maybeStripe(sessionData.publishableKey);
-            await stripe.redirectToCheckout({ sessionId: sessionData.id });
-            return;
-          }
-        } catch {
-          // ignore
-        }
-
-        // As a last resort, try direct navigation
-        try {
-          if (window.top && window.top !== window) {
-            window.top.location.href = checkoutUrl;
-          } else {
-            window.location.assign(checkoutUrl);
-          }
-        } catch {
-          window.location.href = checkoutUrl;
-        }
-
-        // Timed new-tab open if still visible (some sandboxes ignore clicks)
-        setTimeout(() => {
-          if (document.visibilityState === 'visible') {
-            try {
-              window.open(checkoutUrl, '_blank');
-            } catch {
-              try { window.location.href = checkoutUrl; } catch { /* ignore */ }
-            }
-          }
-        }, 400);
+      if (piData?.clientSecret && piData?.publishableKey) {
+        setCurrentOrderNumber(orderNumber);
+        setCheckoutClientSecret(piData.clientSecret as string);
+        setCheckoutPublishableKey(piData.publishableKey as string);
+        setShowCheckout(true);
+        setIsProcessing(false);
+        return;
       } else {
-        throw new Error('No checkout URL received');
+        throw new Error('Failed to create payment intent');
       }
 
 
@@ -421,17 +371,23 @@ const Cart = () => {
                         {isProcessing ? "Processing..." : "Pay with Stripe"}
                       </Button>
 
-                      {checkoutUrl && (
-                        <div className="text-center mt-2">
-                          <a
-                            href={checkoutUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline text-primary"
-                          >
-                            If not redirected, click here to open Stripe Checkout
-                          </a>
-                        </div>
+                      {checkoutClientSecret && checkoutPublishableKey && (
+                        <CheckoutModal
+                          open={showCheckout}
+                          onOpenChange={setShowCheckout}
+                          clientSecret={checkoutClientSecret}
+                          publishableKey={checkoutPublishableKey}
+                          orderNumber={currentOrderNumber || ''}
+                          onSuccess={() => {
+                            toast.success(`Payment successful! Order #${currentOrderNumber} confirmed.`);
+                            clearCart();
+                            window.history.replaceState({}, '', '/cart');
+                            setShowCheckout(false);
+                            setCheckoutClientSecret(null);
+                            setCheckoutPublishableKey(null);
+                            setCurrentOrderNumber(null);
+                          }}
+                        />
                       )}
 
                       <p className="text-xs text-center text-muted-foreground">
