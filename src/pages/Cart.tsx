@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
-import CheckoutModal from "@/components/checkout/CheckoutModal";
+import EmbeddedCheckoutModal from "@/components/checkout/EmbeddedCheckoutModal";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -107,9 +107,9 @@ const Cart = () => {
 
       if (error) throw error;
 
-      // Create PaymentIntent for in-app modal checkout
-      const { data: piData, error: piError } = await supabase.functions.invoke(
-        'create-payment-intent',
+      // Create Embedded Checkout session (Stripe-hosted UI inside modal)
+      const { data: ecData, error: ecError } = await supabase.functions.invoke(
+        'create-embedded-checkout',
         {
           body: {
             items: cart,
@@ -120,17 +120,17 @@ const Cart = () => {
         }
       );
 
-      if (piError) throw piError;
+      if (ecError) throw ecError;
 
-      if (piData?.clientSecret && piData?.publishableKey) {
+      if (ecData?.clientSecret && ecData?.publishableKey) {
         setCurrentOrderNumber(orderNumber);
-        setCheckoutClientSecret(piData.clientSecret as string);
-        setCheckoutPublishableKey(piData.publishableKey as string);
+        setCheckoutClientSecret(ecData.clientSecret as string);
+        setCheckoutPublishableKey(ecData.publishableKey as string);
         setShowCheckout(true);
         setIsProcessing(false);
         return;
       } else {
-        throw new Error('Failed to create payment intent');
+        throw new Error('Failed to create embedded checkout');
       }
 
 
@@ -347,21 +347,13 @@ const Cart = () => {
                       </Button>
 
                       {checkoutClientSecret && checkoutPublishableKey && (
-                        <CheckoutModal
+                        <EmbeddedCheckoutModal
                           open={showCheckout}
                           onOpenChange={setShowCheckout}
                           clientSecret={checkoutClientSecret}
                           publishableKey={checkoutPublishableKey}
-                          orderNumber={currentOrderNumber || ''}
-                          onSuccess={() => {
-                            toast.success(`Payment successful! Order #${currentOrderNumber} confirmed.`);
-                            clearCart();
-                            window.history.replaceState({}, '', '/cart');
-                            setShowCheckout(false);
-                            setCheckoutClientSecret(null);
-                            setCheckoutPublishableKey(null);
-                            setCurrentOrderNumber(null);
-                          }}
+                          title="Secure Payment"
+                          description={`Order ${currentOrderNumber || ''}`}
                         />
                       )}
 
