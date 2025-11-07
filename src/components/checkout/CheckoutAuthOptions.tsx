@@ -75,26 +75,12 @@ export const CheckoutAuthOptions = ({ onContinueAsGuest, onAuthSuccess }: Checko
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="guest" className="w-full">
+        <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="guest">Guest</TabsTrigger>
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="guest">Guest</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="guest" className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Continue without creating an account. You'll still receive order updates via email.
-            </p>
-            <Button 
-              onClick={onContinueAsGuest} 
-              className="w-full"
-              size="lg"
-            >
-              <ShoppingBag className="mr-2 h-4 w-4" />
-              Continue as Guest
-            </Button>
-          </TabsContent>
           
           <TabsContent value="signin">
             <form onSubmit={handleSignIn} className="space-y-4">
@@ -172,6 +158,20 @@ export const CheckoutAuthOptions = ({ onContinueAsGuest, onAuthSuccess }: Checko
                 )}
               </Button>
             </form>
+          </TabsContent>
+          
+          <TabsContent value="guest" className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Continue without creating an account. You'll still receive order updates via email.
+            </p>
+            <Button 
+              onClick={onContinueAsGuest} 
+              className="w-full"
+              size="lg"
+            >
+              <ShoppingBag className="mr-2 h-4 w-4" />
+              Continue as Guest
+            </Button>
           </TabsContent>
         </Tabs>
       </CardContent>
