@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CartItem {
   id: string;
@@ -23,9 +24,159 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const CART_STORAGE_KEY = 'ricos-tacos-cart';
+const ORDER_TYPE_STORAGE_KEY = 'ricos-tacos-order-type';
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("pickup");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load cart and order type from localStorage or database on mount
+  useEffect(() => {
+    const loadCart = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+
+      // Load order type from localStorage
+      const storedOrderType = localStorage.getItem(ORDER_TYPE_STORAGE_KEY);
+      if (storedOrderType === 'pickup' || storedOrderType === 'delivery') {
+        setOrderType(storedOrderType);
+      }
+
+      if (user) {
+        // Load from database for authenticated users
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (!error && data) {
+          const cartItems: CartItem[] = data.map(item => ({
+            id: item.item_name,
+            name: item.item_name_english || item.item_name,
+            price: parseFloat(item.price.toString()),
+            quantity: item.quantity,
+            image: item.image || undefined
+          }));
+          setCart(cartItems);
+        }
+      } else {
+        // Load from localStorage for guest users
+        const stored = localStorage.getItem(CART_STORAGE_KEY);
+        if (stored) {
+          try {
+            setCart(JSON.parse(stored));
+          } catch (e) {
+            console.error('Error parsing cart from localStorage', e);
+          }
+        }
+      }
+      
+      setIsLoading(false);
+    };
+
+    loadCart();
+  }, []);
+
+  // Listen for auth changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const newUserId = session?.user?.id || null;
+      setUserId(newUserId);
+
+      if (event === 'SIGNED_IN' && newUserId) {
+        // Merge localStorage cart with database on sign in
+        const localCart = localStorage.getItem(CART_STORAGE_KEY);
+        if (localCart) {
+          try {
+            const localItems: CartItem[] = JSON.parse(localCart);
+            
+            // Sync local cart to database
+            if (localItems.length > 0) {
+              for (const item of localItems) {
+                await supabase.from('cart_items').upsert({
+                  user_id: newUserId,
+                  item_name: item.id,
+                  item_name_english: item.name,
+                  price: item.price,
+                  quantity: item.quantity,
+                  image: item.image || '',
+                  category: ''
+                }, {
+                  onConflict: 'user_id,item_name'
+                });
+              }
+
+              // Clear localStorage after syncing
+              localStorage.removeItem(CART_STORAGE_KEY);
+            }
+          } catch (e) {
+            console.error('Error syncing cart', e);
+          }
+        }
+
+        // Load cart from database
+        const { data } = await supabase
+          .from('cart_items')
+          .select('*')
+          .eq('user_id', newUserId);
+
+        if (data) {
+          const cartItems: CartItem[] = data.map(item => ({
+            id: item.item_name,
+            name: item.item_name_english || item.item_name,
+            price: parseFloat(item.price.toString()),
+            quantity: item.quantity,
+            image: item.image || undefined
+          }));
+          setCart(cartItems);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // Save to localStorage when signed out
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [cart]);
+
+  // Persist cart changes
+  useEffect(() => {
+    if (isLoading) return;
+
+    const syncCart = async () => {
+      if (userId) {
+        // Sync to database for authenticated users
+        await supabase.from('cart_items').delete().eq('user_id', userId);
+        
+        if (cart.length > 0) {
+          await supabase.from('cart_items').insert(
+            cart.map(item => ({
+              user_id: userId,
+              item_name: item.id,
+              item_name_english: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: item.image || '',
+              category: ''
+            }))
+          );
+        }
+      } else {
+        // Save to localStorage for guest users
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      }
+    };
+
+    syncCart();
+  }, [cart, userId, isLoading]);
+
+  // Persist order type changes
+  useEffect(() => {
+    localStorage.setItem(ORDER_TYPE_STORAGE_KEY, orderType);
+  }, [orderType]);
 
   const addToCart = (item: { id: string; name: string; price: number; image?: string }) => {
     console.log("addToCart called with:", item);
@@ -58,7 +209,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setCart(prevCart => prevCart.filter(item => item.id !== id));
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
+    if (userId) {
+      await supabase.from('cart_items').delete().eq('user_id', userId);
+    } else {
+      localStorage.removeItem(CART_STORAGE_KEY);
+    }
+    
     setCart([]);
   };
 
