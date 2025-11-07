@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { RoleManagement } from "@/components/admin/RoleManagement";
 
 interface Order {
   id: string;
@@ -247,6 +248,9 @@ const Admin = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Role Management */}
+          <RoleManagement />
 
           {/* Orders List */}
           <Card>
