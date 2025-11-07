@@ -161,11 +161,25 @@ function PaymentForm({
           <Lock className="h-4 w-4" />
           Payment Details
         </h3>
-        <div className="border rounded-lg p-4">
+        <p className="text-xs text-muted-foreground">
+          Enter your card number, expiration date, CVC, and billing address below. All payment information is securely processed by Stripe.
+        </p>
+        <div className="border rounded-lg p-4 bg-background">
           <PaymentElement 
             options={{
               layout: 'tabs',
-              business: { name: 'Ricos Tacos' }
+              business: { name: 'Ricos Tacos' },
+              fields: {
+                billingDetails: {
+                  address: {
+                    country: 'auto',
+                    postalCode: 'auto'
+                  }
+                }
+              },
+              terms: {
+                card: 'auto'
+              }
             }}
             onReady={() => setIsReady(true)}
           />
