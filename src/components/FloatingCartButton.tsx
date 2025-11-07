@@ -100,16 +100,14 @@ export const FloatingCartButton = () => {
       <Button
         onClick={() => setIsExpanded(!isExpanded)}
         size="lg"
-        variant="premium"
         className={cn(
-          "rounded-full h-16 w-16 p-0 shadow-elegant relative transition-all duration-300",
-          isExpanded && "rotate-0",
-          cartCount > 0 && "animate-pulse-subtle"
+          "rounded-full h-16 w-16 p-0 shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground relative transition-all duration-200",
+          isExpanded && "bg-primary/80"
         )}
       >
         <ShoppingCart className="h-6 w-6" />
         {cartCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-golden-yellow text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md">
+          <span className="absolute -top-1 -right-1 bg-background text-foreground border-2 border-primary rounded-full min-w-6 h-6 px-1.5 flex items-center justify-center text-xs font-bold shadow-sm">
             {cartCount}
           </span>
         )}
