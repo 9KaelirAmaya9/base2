@@ -212,7 +212,11 @@ function PaymentForm({
           <PaymentElement 
             options={{
               layout: 'tabs',
-              business: { name: 'Ricos Tacos' }
+              business: { name: 'Ricos Tacos' },
+              wallets: {
+                applePay: 'auto',
+                googlePay: 'auto',
+              }
             }}
             onReady={() => setIsReady(true)}
           />

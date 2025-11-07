@@ -1,7 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ShoppingCart, ArrowRight, Plus, Minus, Trash2 } from "lucide-react";
+import { ShoppingCart, ArrowRight, Plus, Minus, Trash2, CreditCard } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import SecurePaymentModal from "@/components/checkout/SecurePaymentModal";
+import { CheckoutAuthOptions } from "@/components/checkout/CheckoutAuthOptions";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -33,8 +34,25 @@ const Cart = () => {
   const [checkoutPublishableKey, setCheckoutPublishableKey] = useState<string | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [currentOrderNumber, setCurrentOrderNumber] = useState<string | null>(null);
+  const [showAuthOptions, setShowAuthOptions] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    // Check auth status
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+      if (session?.user?.email) {
+        setCustomerInfo(prev => ({ ...prev, email: session.user.email }));
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+      if (session?.user?.email) {
+        setCustomerInfo(prev => ({ ...prev, email: session.user.email }));
+      }
+    });
+
     const success = searchParams.get("success");
     const orderNumber = searchParams.get("order_number");
     
@@ -64,6 +82,8 @@ const Cart = () => {
       toast.error("Payment was canceled. Your cart items are still here.");
       window.history.replaceState({}, '', '/cart');
     }
+
+    return () => subscription.unsubscribe();
   }, [searchParams, clearCart]);
 
   const handlePlaceOrder = async () => {
@@ -355,14 +375,22 @@ const Cart = () => {
                         </div>
                       </div>
 
-                      <Button 
-                        className="w-full" 
-                        size="lg"
-                        onClick={handlePlaceOrder}
-                        disabled={isProcessing}
-                      >
-                        {isProcessing ? "Processing..." : "Pay with Stripe"}
-                      </Button>
+                      {!showAuthOptions ? (
+                        <Button 
+                          className="w-full" 
+                          size="lg"
+                          onClick={() => setShowAuthOptions(true)}
+                          disabled={cart.length === 0}
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Proceed to Checkout
+                        </Button>
+                      ) : (
+                        <CheckoutAuthOptions
+                          onContinueAsGuest={handlePlaceOrder}
+                          onAuthSuccess={handlePlaceOrder}
+                        />
+                      )}
 
                       {checkoutClientSecret && checkoutPublishableKey && currentOrderNumber && (
                         <SecurePaymentModal
