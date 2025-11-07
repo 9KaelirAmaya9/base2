@@ -162,6 +162,25 @@ const Cart = () => {
 
       if (error) throw error;
 
+      // Send push notification to kitchen staff and admins
+      try {
+        await supabase.functions.invoke('send-push-notification', {
+          body: {
+            title: 'New Order Received!',
+            body: `Order #${orderNumber} - ${cart.length} items - $${total.toFixed(2)}`,
+            data: {
+              orderId: orderNumber,
+              orderNumber: orderNumber,
+              url: '/kitchen'
+            },
+            targetRoles: ['admin', 'kitchen']
+          }
+        });
+      } catch (notifError) {
+        console.error('Failed to send push notification:', notifError);
+        // Don't fail the order if notification fails
+      }
+
       // Create PaymentIntent for secure modal checkout
       const { data: piData, error: piError } = await supabase.functions.invoke(
         'create-payment-intent',
