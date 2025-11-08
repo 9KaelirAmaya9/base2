@@ -79,6 +79,12 @@ const specialtyDrinkFlavors = [
   "Coconut",
 ];
 
+const wingsFlavors = [
+  "Mango Habanero",
+  "Buffalo",
+  "BBQ",
+];
+
 export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuItemModalProps) {
   const [selectedAddons, setSelectedAddons] = useState<Set<string>>(new Set());
   const [selectedFlavor, setSelectedFlavor] = useState<string>("");
@@ -89,6 +95,8 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
     item.subcategory === "Specialty Drinks" || 
     item.subcategory === "Sodas" ||
     item.subcategory === "Fresh Drinks";
+  
+  const isWings = item.id === "k7";
 
   // Get the appropriate flavor list
   const getFlavors = () => {
@@ -96,6 +104,7 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
     if (item.subcategory === "Fresh Drinks") return aguasFrescasFlavors;
     if (item.subcategory === "Sodas") return sodaFlavors;
     if (item.subcategory === "Specialty Drinks") return specialtyDrinkFlavors;
+    if (isWings) return wingsFlavors;
     return [];
   };
 
@@ -112,7 +121,7 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
   };
 
   const calculateTotal = () => {
-    if (isDrinkWithFlavors) {
+    if (isDrinkWithFlavors || isWings) {
       return item.price;
     }
     const addonsTotal = defaultAddons
@@ -122,7 +131,7 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
   };
 
   const handleAddToCart = () => {
-    if (isDrinkWithFlavors) {
+    if (isDrinkWithFlavors || isWings) {
       onAddToCart({
         id: item.id,
         name: selectedFlavor ? `${item.name} - ${selectedFlavor}` : item.name,
@@ -181,8 +190,8 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
           </div>
         )}
 
-        {/* Ingredients Section - Only show for non-drink items */}
-        {!isDrinkWithFlavors && (
+        {/* Ingredients Section - Only show for non-drink items and non-wings */}
+        {!isDrinkWithFlavors && !isWings && (
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">Ingredients</h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -196,8 +205,8 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
           </div>
         )}
 
-        {/* Flavors Section - For drinks */}
-        {isDrinkWithFlavors && (
+        {/* Flavors Section - For drinks and wings */}
+        {(isDrinkWithFlavors || isWings) && (
           <div className="space-y-3">
             <h3 className="font-semibold text-lg">Available Flavors</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -218,8 +227,8 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
           </div>
         )}
 
-        {/* Add-ons Section - Only show for non-drink items */}
-        {!isDrinkWithFlavors && (
+        {/* Add-ons Section - Only show for non-drink items and non-wings */}
+        {!isDrinkWithFlavors && !isWings && (
           <div className="space-y-3">
             <h3 className="font-semibold text-lg">Add-ons</h3>
             <div className="space-y-2">
@@ -247,7 +256,7 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
 
         {/* Price and Add to Cart */}
         <div className="border-t border-border pt-4 space-y-3">
-          {!isDrinkWithFlavors && (
+          {!isDrinkWithFlavors && !isWings && (
             <div className="flex items-center justify-between text-xl font-semibold">
               <span>Total</span>
               <span className="bg-gradient-to-r from-serape-red via-serape-pink to-serape-purple bg-clip-text text-transparent">
@@ -255,7 +264,7 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
               </span>
             </div>
           )}
-          {isDrinkWithFlavors && (
+          {(isDrinkWithFlavors || isWings) && (
             <div className="flex items-center justify-between text-xl font-semibold">
               <span>Price</span>
               <span className="bg-gradient-to-r from-serape-red via-serape-pink to-serape-purple bg-clip-text text-transparent">
@@ -263,7 +272,12 @@ export function MenuItemModal({ open, onOpenChange, item, onAddToCart }: MenuIte
               </span>
             </div>
           )}
-          <Button onClick={handleAddToCart} className="w-full gap-2" size="lg">
+          <Button 
+            onClick={handleAddToCart} 
+            className="w-full gap-2" 
+            size="lg"
+            disabled={(isDrinkWithFlavors || isWings) && !selectedFlavor}
+          >
             <Plus className="h-5 w-5" />
             Add to Cart
           </Button>
