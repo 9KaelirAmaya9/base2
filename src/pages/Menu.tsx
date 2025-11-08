@@ -7,16 +7,24 @@ import { getCategoryTranslation } from "@/data/translations";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FlavorSelectionDialog } from "@/components/FlavorSelectionDialog";
-import { Plus } from "lucide-react";
+import { Plus, Filter } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Menu = () => {
   const { t, language } = useLanguage();
   const { addToCart } = useCart();
   const [flavorDialogOpen, setFlavorDialogOpen] = useState(false);
   const [pendingItem, setPendingItem] = useState<{ id: string; name: string; price: number; image?: string } | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const handleAddToCart = (item: { id: string; name: string; price: number; image?: string }) => {
     const translatedItem = {
@@ -57,7 +65,7 @@ const Menu = () => {
       <div className="pt-24 sm:pt-28 md:pt-32 pb-16 sm:pb-20">
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="text-center mb-12 sm:mb-16">
+          <div className="text-center mb-8 sm:mb-12">
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold mb-4 sm:mb-6">
               {t("menu.title")} <span className="text-primary">{t("menu.titleHighlight")}</span>
             </h1>
@@ -66,9 +74,31 @@ const Menu = () => {
             </p>
           </div>
 
+          {/* Category Filter */}
+          <div className="sticky top-20 sm:top-24 z-30 bg-background/95 backdrop-blur-sm py-4 mb-8 -mx-4 px-4 border-y border-border shadow-sm">
+            <div className="flex items-center gap-3 max-w-md mx-auto">
+              <Filter className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="flex-1 bg-card border-2 border-border hover:border-primary/50 transition-colors">
+                  <SelectValue placeholder={t("menu.filterPlaceholder") || "Filter by category"} />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="all">{t("menu.allCategories") || "All Categories"}</SelectItem>
+                  {menuCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {getCategoryTranslation(language, category)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Menu by Category */}
           <div className="space-y-20">
-            {menuCategories.map((category) => {
+            {menuCategories
+              .filter(category => selectedCategory === "all" || category === selectedCategory)
+              .map((category) => {
               const categoryItems = menuItems.filter(item => item.category === category);
               
               if (categoryItems.length === 0) return null;
