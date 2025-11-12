@@ -54,36 +54,15 @@ const Admin = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   useEffect(() => {
-    checkAuth();
+    const loadData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setUser(session.user);
+      }
+      await fetchOrders();
+    };
+    loadData();
   }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
-
-    setUser(session.user);
-    
-    // Check if user has admin role (server-side verification via RLS)
-    const { data: userRoles, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "admin")
-      .single();
-
-    if (error || !userRoles) {
-      toast.error("You don't have admin access");
-      await supabase.auth.signOut();
-      navigate("/auth");
-      return;
-    }
-
-    fetchOrders();
-  };
 
   const fetchOrders = async () => {
     setIsLoading(true);
