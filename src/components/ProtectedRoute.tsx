@@ -14,43 +14,56 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   const [hasRole, setHasRole] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (!session) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
+        setIsAuthenticated(true);
+
+        // If no specific role required, just check authentication
+        if (!requiredRole) {
+          setHasRole(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user has the required role
+        const { data: roles, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
+
+        if (!mounted) return;
+
+        // If there's an error or no roles, assume user needs to wait for role assignment
+        const userHasRole = roles?.some(r => r.role === requiredRole) ?? false;
+        setHasRole(userHasRole);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+        }
+      }
+    };
+
     checkAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, [requiredRole]);
-
-  const checkAuth = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setIsAuthenticated(false);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsAuthenticated(true);
-
-      // If no specific role required, just check authentication
-      if (!requiredRole) {
-        setHasRole(true);
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if user has the required role
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id);
-
-      const userHasRole = roles?.some(r => r.role === requiredRole) ?? false;
-      setHasRole(userHasRole);
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Auth check error:", error);
-      setIsAuthenticated(false);
-      setIsLoading(false);
-    }
-  };
 
   if (isLoading) {
     return (
