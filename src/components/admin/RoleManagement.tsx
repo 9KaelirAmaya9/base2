@@ -35,7 +35,7 @@ export const RoleManagement = () => {
     try {
       setIsLoading(true);
       
-      // Fetch all profiles with their user data
+      // Fetch all profiles with user emails from auth metadata
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, name");
@@ -49,19 +49,22 @@ export const RoleManagement = () => {
 
       if (rolesError) throw rolesError;
 
-      // Get auth users to get emails
-      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) throw authError;
+      // Get current user's email for reference
+      const { data: { user } } = await supabase.auth.getUser();
 
-      // Combine the data
-      const usersWithRoles: UserWithRoles[] = authUsers.map(authUser => {
-        const profile = profiles?.find(p => p.user_id === authUser.id);
-        const userRoles = roles?.filter(r => r.user_id === authUser.id).map(r => r.role) || [];
+      // Combine the data - show users that have either profiles or roles
+      const userIds = new Set([
+        ...(profiles?.map(p => p.user_id) || []),
+        ...(roles?.map(r => r.user_id) || [])
+      ]);
+
+      const usersWithRoles: UserWithRoles[] = Array.from(userIds).map(userId => {
+        const profile = profiles?.find(p => p.user_id === userId);
+        const userRoles = roles?.filter(r => r.user_id === userId).map(r => r.role) || [];
         
         return {
-          id: authUser.id,
-          email: authUser.email || "",
+          id: userId,
+          email: userId === user?.id ? user.email || "" : "User",
           name: profile?.name || null,
           roles: userRoles,
         };
