@@ -20,13 +20,13 @@ const SignUp = () => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/profile");
+        navigate("/dashboard");
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate("/profile");
+        navigate("/dashboard");
       }
     });
 
@@ -48,14 +48,14 @@ const SignUp = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/profile`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
 
       if (error) throw error;
       
       toast.success("Account created successfully!");
-      navigate("/profile");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign up");
     } finally {
@@ -68,7 +68,7 @@ const SignUp = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/profile`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       if (error) throw error;
@@ -82,7 +82,7 @@ const SignUp = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: `${window.location.origin}/profile`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       if (error) throw error;

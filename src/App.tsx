@@ -23,6 +23,7 @@ import Kitchen from "./pages/Kitchen";
 import Dashboard from "./pages/Dashboard";
 import OrderSuccess from "./pages/OrderSuccess";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -44,8 +45,8 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/admin" element={<Admin />} />

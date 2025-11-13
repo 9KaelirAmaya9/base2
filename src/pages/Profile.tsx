@@ -30,7 +30,7 @@ const Profile = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate("/signin");
+        navigate("/auth");
         return;
       }
 
@@ -54,7 +54,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error("Error checking user:", error);
-      navigate("/signin");
+      navigate("/auth");
     } finally {
       setIsLoading(false);
     }

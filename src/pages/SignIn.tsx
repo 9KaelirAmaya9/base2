@@ -19,13 +19,13 @@ const SignIn = () => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/profile");
+        navigate("/dashboard");
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate("/profile");
+        navigate("/dashboard");
       }
     });
 
@@ -45,7 +45,7 @@ const SignIn = () => {
       if (error) throw error;
       
       toast.success("Signed in successfully!");
-      navigate("/profile");
+      navigate("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");
     } finally {
@@ -58,7 +58,7 @@ const SignIn = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/profile`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       if (error) throw error;
@@ -72,7 +72,7 @@ const SignIn = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: {
-          redirectTo: `${window.location.origin}/profile`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       if (error) throw error;
