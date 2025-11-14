@@ -11,47 +11,7 @@ const KitchenLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    let mounted = true;
-
-    const checkExistingSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-
-        if (session) {
-          // Check if user has kitchen role
-          const { data: roles } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id);
-
-          if (!mounted) return;
-
-          const hasKitchenRole = roles?.some(r => r.role === "kitchen" || r.role === "admin");
-          
-          if (hasKitchenRole) {
-            navigate("/kitchen");
-            return;
-          }
-        }
-      } catch (error) {
-        console.error("Session check error:", error);
-      } finally {
-        if (mounted) setChecking(false);
-      }
-    };
-
-    checkExistingSession();
-
-    return () => {
-      mounted = false;
-    };
-  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,14 +63,6 @@ const KitchenLogin = () => {
       setLoading(false);
     }
   };
-
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
