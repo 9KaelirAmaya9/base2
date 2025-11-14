@@ -49,8 +49,8 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/logout" element={<Logout />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/kitchen" element={<Kitchen />} />
+                <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
+                <Route path="/kitchen" element={<ProtectedRoute requiredRole="kitchen"><Kitchen /></ProtectedRoute>} />
                 <Route path="/order-success" element={<OrderSuccess />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

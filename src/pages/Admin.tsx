@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { printReceipt } from "@/utils/printReceipt";
 import { 
   DollarSign, 
@@ -160,8 +159,7 @@ const Admin = () => {
   }
 
   return (
-    <ProtectedRoute requiredRole="admin">
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Sticky Header */}
         <div className="sticky top-0 z-10 bg-background border-b border-border shadow-sm">
           <div className="container mx-auto px-4 py-4">
@@ -318,7 +316,6 @@ const Admin = () => {
           </Card>
         </div>
       </div>
-    </ProtectedRoute>
   );
 };
 

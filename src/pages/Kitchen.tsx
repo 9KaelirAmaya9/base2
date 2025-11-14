@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Clock, Package, ChefHat, Printer } from "lucide-react";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { printReceipt } from "@/utils/printReceipt";
 import { NotificationSettings } from "@/components/NotificationSettings";
 
@@ -128,8 +127,7 @@ const Kitchen = () => {
   }
 
   return (
-    <ProtectedRoute requiredRole="kitchen">
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         {/* Sticky Header - Tablet Optimized */}
         <div className="sticky top-0 z-10 bg-background border-b border-border shadow-sm">
           <div className="max-w-7xl mx-auto p-6 md:p-8">
@@ -250,7 +248,6 @@ const Kitchen = () => {
           )}
         </div>
       </div>
-    </ProtectedRoute>
   );
 };
 

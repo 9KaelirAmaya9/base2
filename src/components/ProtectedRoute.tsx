@@ -15,91 +15,75 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
   useEffect(() => {
     let mounted = true;
+    let checkInProgress = false;
 
-    // Listen for auth state changes first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
+    const checkAuth = async () => {
+      if (checkInProgress) return;
+      checkInProgress = true;
 
-      const authed = !!session;
-      setIsAuthenticated(authed);
-
-      if (!authed) {
-        setHasRole(false);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!requiredRole) {
-        setHasRole(true);
-        setIsLoading(false);
-        return;
-      }
-
-      // Defer DB calls from within the callback to avoid deadlocks
-      setTimeout(async () => {
-        try {
-          const { data: roles } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session!.user.id);
-
-          if (!mounted) return;
-          const userHasRole = roles?.some(r => r.role === requiredRole) ?? false;
-          setHasRole(userHasRole);
-        } catch (e) {
-          console.error("Role check error:", e);
-          if (mounted) setHasRole(false);
-        } finally {
-          if (mounted) setIsLoading(false);
-        }
-      }, 0);
-    });
-
-    // Then check the current session immediately
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
         if (!mounted) return;
-        const authed = !!session;
-        setIsAuthenticated(authed);
 
-        if (!authed) {
+        if (error || !session) {
+          setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
           return;
         }
 
+        setIsAuthenticated(true);
+
+        // If no role required, we're done
         if (!requiredRole) {
           setHasRole(true);
           setIsLoading(false);
           return;
         }
 
-        (async () => {
-          try {
-            const { data: roles } = await supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", session.user.id);
+        // Check role
+        const { data: roles, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
 
-            if (!mounted) return;
-            const userHasRole = roles?.some(r => r.role === requiredRole) ?? false;
-            setHasRole(userHasRole);
-          } catch (e) {
-            console.error("Role check error:", e);
-            if (mounted) setHasRole(false);
-          } finally {
-            if (mounted) setIsLoading(false);
-          }
-        })();
-      })
-      .catch((e) => {
-        console.error("Get session error:", e);
+        if (!mounted) return;
+
+        if (roleError) {
+          console.error("Role check error:", roleError);
+          setHasRole(false);
+        } else {
+          const userHasRole = roles?.some(r => r.role === requiredRole) ?? false;
+          setHasRole(userHasRole);
+        }
+      } catch (e) {
+        console.error("Auth check error:", e);
         if (mounted) {
           setIsAuthenticated(false);
           setHasRole(false);
-          setIsLoading(false);
         }
-      });
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+          checkInProgress = false;
+        }
+      }
+    };
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
+      // Reset loading state when auth changes
+      setIsLoading(true);
+      
+      // Trigger check on next tick to avoid blocking
+      setTimeout(() => checkAuth(), 0);
+    });
+
+    // Initial check
+    checkAuth();
 
     return () => {
       mounted = false;
