@@ -13,34 +13,71 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchUserAndRoles = async () => {
+      console.log("Dashboard: Starting fetchUserAndRoles");
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log("Dashboard: Session result:", { session: !!session, sessionError });
+        
+        if (!isMounted) return;
+        
+        if (sessionError) {
+          console.error("Dashboard: Session error:", sessionError);
+          return;
+        }
         
         if (!session) {
-          navigate("/auth");
+          console.log("Dashboard: No session found. Not navigating; showing sign-in prompt.");
+          setUser(null);
           return;
         }
 
+        console.log("Dashboard: Setting user:", session.user.email);
         setUser(session.user);
 
         // Fetch user roles
-        const { data: roles } = await supabase
+        console.log("Dashboard: Fetching roles for user:", session.user.id);
+        const { data: roles, error: rolesError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id);
 
-        if (roles) {
-          setUserRoles(roles.map(r => r.role));
+        console.log("Dashboard: Roles result:", { roles, rolesError });
+        
+        if (!isMounted) return;
+
+        if (rolesError) {
+          console.error("Dashboard: Roles error:", rolesError);
+        } else if (roles) {
+          const userRolesList = roles.map(r => r.role);
+          console.log("Dashboard: Setting user roles:", userRolesList);
+          setUserRoles(userRolesList);
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Dashboard: Error fetching user data:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          console.log("Dashboard: Setting loading to false");
+          setLoading(false);
+        }
       }
     };
 
+    const safety = setTimeout(() => {
+      if (isMounted) {
+        console.warn("Dashboard: safety timeout reached, forcing loading=false");
+        setLoading(false);
+      }
+    }, 6000);
+
     fetchUserAndRoles();
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(safety);
+    };
   }, [navigate]);
 
   const handleSignOut = async () => {
@@ -52,6 +89,24 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background pattern-tile flex items-center justify-center p-6">
+        <Card className="w-full max-w-md border-2">
+          <CardHeader>
+            <CardTitle>Sign in required</CardTitle>
+            <CardDescription>You need to sign in to access the dashboard.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => navigate('/auth')}>
+              Go to Sign In
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
