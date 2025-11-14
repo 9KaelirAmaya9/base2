@@ -48,7 +48,7 @@ const App = () => (
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/kitchen-login" element={<KitchenLogin />} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
