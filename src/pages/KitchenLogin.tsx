@@ -36,12 +36,23 @@ const KitchenLogin = () => {
       }
 
       // Verify kitchen role
-      const { data: roles } = await supabase
+      console.log("Checking role for user:", data.session.user.id);
+      const { data: roles, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", data.session.user.id);
 
+      console.log("Role check result:", { roles, roleError });
+
+      if (roleError) {
+        console.error("Role check error:", roleError);
+        toast.error(`Role verification failed: ${roleError.message}`);
+        setLoading(false);
+        return;
+      }
+
       const hasKitchenRole = roles?.some(r => r.role === "kitchen" || r.role === "admin");
+      console.log("Has kitchen role:", hasKitchenRole);
 
       if (!hasKitchenRole) {
         await supabase.auth.signOut();
