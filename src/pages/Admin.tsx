@@ -16,7 +16,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Printer
+  Printer,
+  ClipboardList
 } from "lucide-react";
 import {
   Select,
@@ -168,10 +169,16 @@ const Admin = () => {
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold">Admin Dashboard</h1>
                 <p className="text-sm text-muted-foreground break-words">Welcome back, {user?.email}</p>
               </div>
-              <Button variant="outline" onClick={handleSignOut} size="sm">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => navigate("/admin/orders")} size="sm">
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Order Tracking
+                </Button>
+                <Button variant="outline" onClick={handleSignOut} size="sm">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
           </div>
         </div>
