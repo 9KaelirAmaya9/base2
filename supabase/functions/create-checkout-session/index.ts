@@ -42,6 +42,53 @@ serve(async (req) => {
 
     const { items, orderType, customerInfo, orderNumber } = await req.json();
 
+    // Validate input parameters
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      throw new Error("No items provided");
+    }
+    if (!orderNumber || typeof orderNumber !== 'string') {
+      throw new Error("Valid order number is required");
+    }
+    if (!orderType || !['pickup', 'delivery'].includes(orderType)) {
+      throw new Error("Valid order type (pickup/delivery) is required");
+    }
+    if (!customerInfo || !customerInfo.name || !customerInfo.phone) {
+      throw new Error("Customer information is required");
+    }
+
+    // Verify order exists and user is authorized
+    const { data: existingOrder, error: orderError } = await supabase
+      .from('orders')
+      .select('user_id, status')
+      .eq('order_number', orderNumber)
+      .single();
+
+    if (orderError || !existingOrder) {
+      return new Response(
+        JSON.stringify({ error: "Order not found or invalid" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+      );
+    }
+
+    // Check authorization: user must own the order or be admin/kitchen
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    const isAdmin = userRoles?.some(r => r.role === 'admin');
+    const isKitchen = userRoles?.some(r => r.role === 'kitchen');
+    const isOrderOwner = existingOrder.user_id === user.id;
+
+    if (!isOrderOwner && !isAdmin && !isKitchen) {
+      return new Response(
+        JSON.stringify({ error: "Not authorized to process this order" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
+
+    console.log(`Checkout session authorized for order ${orderNumber} by user ${user.id}`);
+
     // Determine site origin for redirect URLs
     const origin = req.headers.get('origin') || 'https://1c5a3260-4d54-412b-b8f8-4af54564df01.lovableproject.com';
 

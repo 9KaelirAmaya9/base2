@@ -21,37 +21,77 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify JWT token - allow internal calls (from webhook) or authenticated users
+    // Verify JWT token
     const authHeader = req.headers.get("Authorization");
-    const isInternalCall = req.headers.get("x-internal-call") === "true";
     
-    // If called internally (from webhook), skip auth check
-    if (!isInternalCall) {
-      if (!authHeader) {
-        return new Response(
-          JSON.stringify({ error: "Missing authorization header" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-        );
-      }
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
 
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } }
-      });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-        );
-      }
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
     }
 
     const { orderNumber, customerName, customerEmail, customerPhone, orderType, total, items }: OrderNotification = await req.json();
     
-    console.log(`Processing notification for order ${orderNumber}`);
+    // Validate input
+    if (!orderNumber || typeof orderNumber !== 'string') {
+      throw new Error("Valid order number is required");
+    }
+    
+    // Verify order exists and user is authorized
+    const { data: existingOrder, error: orderError } = await supabase
+      .from('orders')
+      .select('user_id, status, customer_email, customer_phone')
+      .eq('order_number', orderNumber)
+      .single();
+
+    if (orderError || !existingOrder) {
+      return new Response(
+        JSON.stringify({ error: "Order not found or invalid" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+      );
+    }
+
+    // Check authorization: user must own the order or be admin/kitchen
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    const isAdmin = userRoles?.some(r => r.role === 'admin');
+    const isKitchen = userRoles?.some(r => r.role === 'kitchen');
+    const isOrderOwner = existingOrder.user_id === user.id;
+
+    if (!isOrderOwner && !isAdmin && !isKitchen) {
+      return new Response(
+        JSON.stringify({ error: "Not authorized to send notifications for this order" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
+
+    // Verify contact information matches order
+    if (existingOrder.customer_email && existingOrder.customer_email !== customerEmail) {
+      console.warn(`Email mismatch for order ${orderNumber}`);
+    }
+    if (existingOrder.customer_phone && existingOrder.customer_phone !== customerPhone) {
+      console.warn(`Phone mismatch for order ${orderNumber}`);
+    }
+    
+    console.log(`Notification authorized for order ${orderNumber} by user ${user.id}`);
 
     // Format order items for the message
     const itemsList = items.map(item => `${item.quantity}x ${item.name} - $${item.price.toFixed(2)}`).join('\n');
