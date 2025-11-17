@@ -22,6 +22,7 @@ const Admin = () => {
   const [pendingOrders, setPendingOrders] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadMetrics();
@@ -38,7 +39,10 @@ const Admin = () => {
         .select("id, total, status, created_at")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error loading orders:", error);
+        throw error;
+      }
 
       const orders = allOrders || [];
       
@@ -52,8 +56,12 @@ const Admin = () => {
       setTodayRevenue(ordersToday.reduce((sum, order) => sum + Number(order.total), 0));
       setPendingOrders(orders.filter(o => o.status === 'pending').length);
       setTotalOrders(orders.length);
+      setError(null);
     } catch (error: any) {
-      toast.error("Failed to load metrics");
+      console.error("Failed to load metrics:", error);
+      const errorMessage = error?.message || "Failed to load metrics";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -144,6 +152,15 @@ const Admin = () => {
             Back to Dashboard
           </Button>
         </div>
+
+        {error && (
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <p className="text-destructive">Error: {error}</p>
+              <Button onClick={loadMetrics} className="mt-4">Retry</Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Metrics Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
