@@ -174,25 +174,31 @@ const Cart = () => {
     }
 
     setIsProcessing(true);
+    const overallStartTime = Date.now();
 
     try {
+      console.log("=== STEP 1: Calculating totals ===");
       const subtotal = cartTotal;
       const discountAmount = appliedCoupon?.discount_amount || 0;
       const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
       const tax = subtotalAfterDiscount * 0.08875; // NYC sales tax: 8.875%
       const deliveryFee = orderType === "delivery" ? 5.00 : 0; // $5 delivery fee
       const total = subtotalAfterDiscount + tax + deliveryFee;
+      console.log(`Totals calculated in ${Date.now() - overallStartTime}ms`);
 
       // Get current user if authenticated
-      console.log("Getting session...");
+      console.log("=== STEP 2: Getting session ===");
+      const sessionStartTime = Date.now();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
         console.warn("Session error (non-critical):", sessionError);
       }
+      console.log(`Session retrieved in ${Date.now() - sessionStartTime}ms`);
       
       // Generate order number on client to avoid needing SELECT permissions
       const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
       
+      console.log("=== STEP 3: Creating order ===");
       console.log("Creating order as:", session?.user?.id ? "authenticated" : "guest");
       console.log("Order data:", {
         order_number: orderNumber,
@@ -205,9 +211,15 @@ const Cart = () => {
       });
       
       // Add timeout to order creation to prevent hanging
-      // Database inserts are typically fast (0.5-2s), but we allow 8s for slow networks and connection issues
+      // Database inserts are typically fast (0.5-2s), but we allow 10s for slow networks and connection issues
       console.log("Inserting order into database...");
       const orderStartTime = Date.now();
+      
+      // Add a heartbeat to track progress
+      const orderHeartbeat = setInterval(() => {
+        const elapsed = Date.now() - orderStartTime;
+        console.log(`Order creation in progress... (${elapsed}ms elapsed)`);
+      }, 2000);
       const orderInsertPromise = supabase
         .from("orders")
         .insert([{
@@ -231,8 +243,9 @@ const Cart = () => {
       const orderTimeoutPromise = new Promise((_, reject) => 
         setTimeout(() => {
           const elapsed = Date.now() - orderStartTime;
-          reject(new Error(`Order creation timed out after 8 seconds (elapsed: ${elapsed}ms)`));
-        }, 8000)
+          clearInterval(orderHeartbeat);
+          reject(new Error(`Order creation timed out after 10 seconds (elapsed: ${elapsed}ms)`));
+        }, 10000)
       );
 
       const { data: orderData, error: orderError } = await Promise.race([
@@ -240,6 +253,8 @@ const Cart = () => {
         orderTimeoutPromise
       ]) as any;
 
+      clearInterval(orderHeartbeat);
+      
       if (orderError) {
         const elapsed = Date.now() - orderStartTime;
         console.error("Order creation error:", orderError);
@@ -248,7 +263,8 @@ const Cart = () => {
       }
       
       const orderElapsed = Date.now() - orderStartTime;
-      console.log(`Order created successfully in ${orderElapsed}ms:`, orderNumber);
+      console.log(`✅ Order created successfully in ${orderElapsed}ms:`, orderNumber);
+      console.log(`Total time so far: ${Date.now() - overallStartTime}ms`);
 
       // Send push notification to kitchen staff and admins (non-blocking)
       // Only send if user is authenticated (notification function requires auth)
@@ -282,11 +298,12 @@ const Cart = () => {
         quantity: item.quantity,
       }));
 
+      console.log("=== STEP 4: Creating payment intent ===");
       console.log("Creating payment intent for order:", orderNumber);
       console.log("Payment items:", paymentItems);
       
       // Add timeout to payment intent creation to prevent hanging
-      // Stripe API + edge function typically takes 1-4s, but we allow 12s for cold starts, slow networks, and Stripe API delays
+      // Stripe API + edge function typically takes 1-4s, but we allow 15s for cold starts, slow networks, and Stripe API delays
       const paymentStartTime = Date.now();
       const paymentIntentPromise = supabase.functions.invoke(
         'create-payment-intent',
@@ -302,11 +319,18 @@ const Cart = () => {
         }
       );
 
+      // Add a heartbeat to track progress
+      const paymentHeartbeat = setInterval(() => {
+        const elapsed = Date.now() - paymentStartTime;
+        console.log(`Payment intent creation in progress... (${elapsed}ms elapsed)`);
+      }, 2000);
+
       const paymentTimeoutPromise = new Promise((_, reject) => 
         setTimeout(() => {
           const elapsed = Date.now() - paymentStartTime;
-          reject(new Error(`Payment intent creation timed out after 12 seconds (elapsed: ${elapsed}ms)`));
-        }, 12000)
+          clearInterval(paymentHeartbeat);
+          reject(new Error(`Payment intent creation timed out after 15 seconds (elapsed: ${elapsed}ms)`));
+        }, 15000)
       );
 
       const { data: piData, error: piError } = await Promise.race([
@@ -314,6 +338,8 @@ const Cart = () => {
         paymentTimeoutPromise
       ]) as any;
 
+      clearInterval(paymentHeartbeat);
+      
       if (piError) {
         const elapsed = Date.now() - paymentStartTime;
         console.error("Payment intent error details:", {
@@ -329,11 +355,12 @@ const Cart = () => {
       }
 
       const paymentElapsed = Date.now() - paymentStartTime;
-      console.log(`Payment intent created in ${paymentElapsed}ms:`, {
+      console.log(`✅ Payment intent created in ${paymentElapsed}ms:`, {
         hasClientSecret: !!piData?.clientSecret,
         hasPublishableKey: !!piData?.publishableKey,
         data: piData
       });
+      console.log(`Total checkout time: ${Date.now() - overallStartTime}ms`);
 
       if (piData?.clientSecret && piData?.publishableKey) {
         console.log("Opening payment modal for order:", orderNumber);

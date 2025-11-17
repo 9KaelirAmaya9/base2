@@ -214,21 +214,31 @@ export const CheckoutAuthOptions = ({ onContinueAsGuest, onAuthSuccess }: Checko
                 setIsGuestLoading(true);
                 try {
                   // Add timeout wrapper to prevent infinite loading
-                  // Total timeout: 25s (covers order creation 8s + payment intent 12s + 5s buffer)
+                  // Total timeout: 30s (covers order creation 10s + payment intent 15s + 5s buffer)
                   const checkoutStartTime = Date.now();
+                  
+                  // Add progress logging
+                  const progressInterval = setInterval(() => {
+                    const elapsed = Date.now() - checkoutStartTime;
+                    console.log(`Checkout in progress... (${elapsed}ms elapsed)`);
+                  }, 5000);
+                  
                   const timeoutPromise = new Promise((_, reject) => 
                     setTimeout(() => {
                       const elapsed = Date.now() - checkoutStartTime;
-                      reject(new Error(`Checkout process timed out after 25 seconds (elapsed: ${elapsed}ms)`));
-                    }, 25000)
+                      clearInterval(progressInterval);
+                      reject(new Error(`Checkout process timed out after 30 seconds (elapsed: ${elapsed}ms)`));
+                    }, 30000)
                   );
                   
                   await Promise.race([
                     Promise.resolve(onContinueAsGuest()),
                     timeoutPromise
                   ]);
+                  clearInterval(progressInterval);
                   console.log("onContinueAsGuest completed");
                 } catch (err: any) {
+                  clearInterval(progressInterval);
                   console.error("Error calling onContinueAsGuest:", err);
                   const errorMsg = err?.message || "Failed to process order. Check console for details.";
                   toast.error(errorMsg, {
