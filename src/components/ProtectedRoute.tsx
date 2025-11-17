@@ -50,11 +50,15 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
       if (session && requiredRole) {
         // defer DB call to avoid deadlocks inside the callback
         setIsLoading(true);
-        setTimeout(() => checkRole(session.user.id), 0);
+        setTimeout(() => {
+          checkRole(session.user.id).finally(() => {
+            if (mounted) setIsLoading(false);
+          });
+        }, 0);
+      } else {
+        // No role required or no session
+        setIsLoading(false);
       }
-
-      // finalize loading after the auth event updates state
-      setIsLoading(false);
     });
 
     // 2) Also check current session, but do NOT conclude "unauthenticated" immediately
