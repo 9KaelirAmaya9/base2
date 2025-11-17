@@ -184,7 +184,11 @@ const Cart = () => {
       const total = subtotalAfterDiscount + tax + deliveryFee;
 
       // Get current user if authenticated
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Getting session...");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.warn("Session error (non-critical):", sessionError);
+      }
       
       // Generate order number on client to avoid needing SELECT permissions
       const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -200,7 +204,9 @@ const Cart = () => {
         items_count: cart.length,
       });
       
-      const { data: orderData, error: orderError } = await supabase
+      // Add timeout to order creation to prevent hanging
+      console.log("Inserting order into database...");
+      const orderInsertPromise = supabase
         .from("orders")
         .insert([{
           order_number: orderNumber,
@@ -219,6 +225,15 @@ const Cart = () => {
           notes: validation.data.notes || null,
           status: "pending",
         }], { returning: 'minimal' } as any);
+
+      const orderTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Order creation timed out after 10 seconds")), 10000)
+      );
+
+      const { data: orderData, error: orderError } = await Promise.race([
+        orderInsertPromise,
+        orderTimeoutPromise
+      ]) as any;
 
       if (orderError) {
         console.error("Order creation error:", orderError);
@@ -262,7 +277,8 @@ const Cart = () => {
       console.log("Creating payment intent for order:", orderNumber);
       console.log("Payment items:", paymentItems);
       
-      const { data: piData, error: piError } = await supabase.functions.invoke(
+      // Add timeout to payment intent creation to prevent hanging
+      const paymentIntentPromise = supabase.functions.invoke(
         'create-payment-intent',
         {
           body: {
@@ -275,6 +291,15 @@ const Cart = () => {
           }
         }
       );
+
+      const paymentTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Payment intent creation timed out after 15 seconds")), 15000)
+      );
+
+      const { data: piData, error: piError } = await Promise.race([
+        paymentIntentPromise,
+        paymentTimeoutPromise
+      ]) as any;
 
       if (piError) {
         console.error("Payment intent error details:", {
@@ -328,10 +353,18 @@ const Cart = () => {
         errorMessage = error;
       }
       
+      // Check if it's a timeout error
+      if (errorMessage.includes("timed out")) {
+        errorMessage = "Request timed out. Please check your internet connection and try again.";
+      }
+      
       toast.error(errorMessage, {
         duration: 8000,
         description: "Check the browser console (F12) for more details",
       });
+    } finally {
+      // Always reset processing state, even if there was an error
+      console.log("Resetting processing state");
       setIsProcessing(false);
     }
   };

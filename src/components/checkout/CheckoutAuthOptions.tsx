@@ -213,12 +213,25 @@ export const CheckoutAuthOptions = ({ onContinueAsGuest, onAuthSuccess }: Checko
                 console.log("onContinueAsGuest function:", typeof onContinueAsGuest);
                 setIsGuestLoading(true);
                 try {
-                  await onContinueAsGuest();
+                  // Add timeout wrapper to prevent infinite loading
+                  const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Checkout process timed out")), 30000)
+                  );
+                  
+                  await Promise.race([
+                    Promise.resolve(onContinueAsGuest()),
+                    timeoutPromise
+                  ]);
                   console.log("onContinueAsGuest completed");
-                } catch (err) {
+                } catch (err: any) {
                   console.error("Error calling onContinueAsGuest:", err);
-                  toast.error("Failed to process order. Check console for details.");
+                  const errorMsg = err?.message || "Failed to process order. Check console for details.";
+                  toast.error(errorMsg, {
+                    duration: 6000,
+                  });
                 } finally {
+                  // Always reset loading state
+                  console.log("Resetting guest loading state");
                   setIsGuestLoading(false);
                 }
               }} 
