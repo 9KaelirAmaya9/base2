@@ -23,6 +23,7 @@ const Admin = () => {
   const [totalOrders, setTotalOrders] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   const loadMetrics = useCallback(async () => {
     setIsLoading(true);
@@ -32,7 +33,7 @@ const Admin = () => {
       const todayISO = today.toISOString();
 
       // Optimize: Fetch only what we need with separate queries for better performance
-      const [todayOrdersResult, allOrdersResult, pendingOrdersResult] = await Promise.all([
+      const [todayOrdersResult, allOrdersResult, pendingOrdersResult, recentOrdersResult] = await Promise.all([
         // Today's orders and revenue
         supabase
           .from("orders")
@@ -47,18 +48,26 @@ const Admin = () => {
         supabase
           .from("orders")
           .select("id", { count: "exact", head: true })
-          .eq("status", "pending")
+          .eq("status", "pending"),
+        // Recent orders
+        supabase
+          .from("orders")
+          .select("id, order_number, customer_name, customer_phone, status, total, created_at, order_type")
+          .order("created_at", { ascending: false })
+          .limit(10)
       ]);
 
       if (todayOrdersResult.error) throw todayOrdersResult.error;
       if (allOrdersResult.error) throw allOrdersResult.error;
       if (pendingOrdersResult.error) throw pendingOrdersResult.error;
+      if (recentOrdersResult.error) throw recentOrdersResult.error;
 
       const ordersToday = todayOrdersResult.data || [];
       setTodayOrders(ordersToday.length);
       setTodayRevenue(ordersToday.reduce((sum, order) => sum + Number(order.total || 0), 0));
       setPendingOrders(pendingOrdersResult.count || 0);
       setTotalOrders(allOrdersResult.count || 0);
+      setRecentOrders(recentOrdersResult.data || []);
       setError(null);
     } catch (error: any) {
       console.error("Failed to load metrics:", error);
@@ -72,6 +81,26 @@ const Admin = () => {
 
   useEffect(() => {
     loadMetrics();
+
+    // Subscribe to real-time order updates
+    const channel = supabase
+      .channel('admin-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        () => {
+          loadMetrics();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [loadMetrics]);
 
   const metrics = useMemo(() => [
@@ -211,17 +240,53 @@ const Admin = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Orders Feed */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest orders and updates</CardDescription>
+            <CardTitle>Recent Orders</CardTitle>
+            <CardDescription>Latest orders in real-time</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Click "View All Orders" to see detailed order information</p>
-            </div>
+            {recentOrders.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No orders yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentOrders.map((order) => (
+                  <div 
+                    key={order.id} 
+                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                    onClick={() => navigate("/admin/orders")}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-foreground">{order.order_number}</span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          order.status === 'pending' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+                          order.status === 'preparing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                          order.status === 'ready' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                          order.status === 'completed' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
+                          'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {order.customer_name} • {order.customer_phone}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {order.order_type} • {new Date(order.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-foreground">${Number(order.total).toFixed(2)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
