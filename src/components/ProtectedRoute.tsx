@@ -15,94 +15,82 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
   useEffect(() => {
     let mounted = true;
-    let initialCheckDone = false;
-    let authEventReceived = false;
 
-    const checkRole = async (uid: string) => {
+    const checkAuthAndRole = async () => {
       try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        if (error) {
+          console.error("Auth check error:", error);
+          setIsAuthenticated(false);
+          setHasRole(false);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!session) {
+          setIsAuthenticated(false);
+          setHasRole(false);
+          setIsLoading(false);
+          return;
+        }
+
+        setIsAuthenticated(true);
+
+        // If no role required, we're done
+        if (!requiredRole) {
+          setHasRole(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check role
         const { data: roles, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", uid);
+          .eq("user_id", session.user.id);
 
         if (!mounted) return;
 
         if (roleError) {
           console.error("Role check error:", roleError);
           setHasRole(false);
-          return;
+        } else {
+          const userHasRole = roles?.some(
+            (r) => r.role === requiredRole || (requiredRole === 'kitchen' && r.role === 'admin')
+          ) ?? false;
+          setHasRole(userHasRole);
         }
-        const userHasRole = roles?.some((r) => r.role === requiredRole || (requiredRole === 'kitchen' && r.role === 'admin')) ?? false;
-        setHasRole(userHasRole);
       } catch (e) {
-        console.error("Role check error:", e);
-        if (mounted) setHasRole(false);
+        console.error("Auth/Role check error:", e);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setHasRole(false);
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
       }
     };
 
-    // 1) Listen for auth changes FIRST and drive UI from it
+    // Initial check
+    checkAuthAndRole();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-      authEventReceived = true;
-
-      setIsAuthenticated(!!session);
-
-      if (session && requiredRole) {
-        // defer DB call to avoid deadlocks inside the callback
-        setIsLoading(true);
-        setTimeout(() => {
-          checkRole(session.user.id).finally(() => {
-            if (mounted) setIsLoading(false);
-          });
-        }, 0);
-      } else {
-        // No role required or no session
-        setIsLoading(false);
-      }
+      
+      // Reset state and re-check
+      setIsLoading(true);
+      setTimeout(() => {
+        checkAuthAndRole();
+      }, 0);
     });
-
-    // 2) Also check current session, but do NOT conclude "unauthenticated" immediately
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!mounted) return;
-      initialCheckDone = true;
-
-      if (error) {
-        console.error("Auth check error:", error);
-      }
-
-      if (session) {
-        setIsAuthenticated(true);
-        if (requiredRole) {
-          setIsLoading(true);
-          checkRole(session.user.id).finally(() => {
-            if (mounted) setIsLoading(false);
-          });
-        } else {
-          setIsLoading(false);
-        }
-      } else {
-        // wait briefly for the auth listener to hydrate before deciding
-        setTimeout(() => {
-          if (mounted && !authEventReceived) {
-            setIsAuthenticated(false);
-            setHasRole(false);
-            setIsLoading(false);
-          }
-        }, 800);
-      }
-    });
-
-    // 3) Safety timeout to avoid perpetual loading
-    const safety = setTimeout(() => {
-      if (mounted && (initialCheckDone || authEventReceived)) {
-        setIsLoading(false);
-      }
-    }, 4000);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      clearTimeout(safety);
     };
   }, [requiredRole]);
 

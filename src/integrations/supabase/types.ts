@@ -238,6 +238,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bootstrap_admin: { Args: never; Returns: boolean }
       generate_order_number: { Args: never; Returns: string }
       has_role: {
         Args: {
