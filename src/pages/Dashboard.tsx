@@ -45,11 +45,10 @@ const Dashboard = () => {
       setUser(newSession?.user ?? null);
 
       if (newSession?.user) {
-        // Defer any supabase calls to avoid deadlocks in the callback
-        setTimeout(() => {
-          fetchRoles(newSession.user!.id);
-          setLoading(false);
-        }, 0);
+        // Fetch roles directly - no need for setTimeout
+        fetchRoles(newSession.user.id).finally(() => {
+          if (isMounted) setLoading(false);
+        });
       } else {
         setUserRoles([]);
         setLoading(false);
@@ -73,12 +72,13 @@ const Dashboard = () => {
       }
     });
 
+    // Safety timeout to prevent infinite loading
     const safety = setTimeout(() => {
       if (isMounted) {
         console.warn("Dashboard: safety timeout reached, forcing loading=false");
         setLoading(false);
       }
-    }, 6000);
+    }, 10000); // Increased to 10s for slower connections
 
     return () => {
       isMounted = false;

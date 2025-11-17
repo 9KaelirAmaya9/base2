@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -24,38 +24,41 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadMetrics();
-  }, []);
-
-  const loadMetrics = async () => {
+  const loadMetrics = useCallback(async () => {
     setIsLoading(true);
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
 
-      const { data: allOrders, error } = await supabase
-        .from("orders")
-        .select("id, total, status, created_at")
-        .order("created_at", { ascending: false });
+      // Optimize: Fetch only what we need with separate queries for better performance
+      const [todayOrdersResult, allOrdersResult, pendingOrdersResult] = await Promise.all([
+        // Today's orders and revenue
+        supabase
+          .from("orders")
+          .select("id, total, created_at")
+          .gte("created_at", todayISO)
+          .order("created_at", { ascending: false }),
+        // Total orders count (lightweight)
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true }),
+        // Pending orders count
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending")
+      ]);
 
-      if (error) {
-        console.error("Error loading orders:", error);
-        throw error;
-      }
+      if (todayOrdersResult.error) throw todayOrdersResult.error;
+      if (allOrdersResult.error) throw allOrdersResult.error;
+      if (pendingOrdersResult.error) throw pendingOrdersResult.error;
 
-      const orders = allOrders || [];
-      
-      // Calculate today's metrics
-      const ordersToday = orders.filter(order => {
-        const orderDate = new Date(order.created_at);
-        return orderDate >= today;
-      });
-
+      const ordersToday = todayOrdersResult.data || [];
       setTodayOrders(ordersToday.length);
-      setTodayRevenue(ordersToday.reduce((sum, order) => sum + Number(order.total), 0));
-      setPendingOrders(orders.filter(o => o.status === 'pending').length);
-      setTotalOrders(orders.length);
+      setTodayRevenue(ordersToday.reduce((sum, order) => sum + Number(order.total || 0), 0));
+      setPendingOrders(pendingOrdersResult.count || 0);
+      setTotalOrders(allOrdersResult.count || 0);
       setError(null);
     } catch (error: any) {
       console.error("Failed to load metrics:", error);
@@ -65,9 +68,13 @@ const Admin = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const metrics = [
+  useEffect(() => {
+    loadMetrics();
+  }, [loadMetrics]);
+
+  const metrics = useMemo(() => [
     {
       title: "Today's Orders",
       value: todayOrders,
@@ -96,9 +103,9 @@ const Admin = () => {
       description: "All time orders",
       color: "text-purple-600"
     }
-  ];
+  ], [todayOrders, todayRevenue, pendingOrders, totalOrders]);
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     {
       title: "View All Orders",
       description: "Manage and track orders",
@@ -127,7 +134,7 @@ const Admin = () => {
       onClick: () => navigate("/profile"),
       color: "bg-gray-500 hover:bg-gray-600"
     }
-  ];
+  ], [navigate]);
 
   if (isLoading) {
     return (

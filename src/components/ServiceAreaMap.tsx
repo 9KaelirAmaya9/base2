@@ -43,11 +43,23 @@ const ServiceAreaMap = () => {
     el.style.backgroundSize = 'cover';
     el.style.cursor = 'pointer';
 
+    // Create popup content safely (avoid XSS by using textContent)
+    const popupContent = document.createElement('div');
+    const title = document.createElement('h3');
+    title.textContent = 'Ricos Tacos';
+    title.style.margin = '0';
+    title.style.fontWeight = 'bold';
+    const address = document.createElement('p');
+    address.textContent = '505 51st Street, Brooklyn, NY 11220';
+    address.style.margin = '0';
+    popupContent.appendChild(title);
+    popupContent.appendChild(address);
+
     new mapboxgl.Marker(el)
       .setLngLat(restaurantCoords)
       .setPopup(
         new mapboxgl.Popup({ offset: 25 })
-          .setHTML('<h3 style="margin:0;font-weight:bold;">Ricos Tacos</h3><p style="margin:0;">505 51st Street, Brooklyn, NY 11220</p>')
+          .setDOMContent(popupContent)
       )
       .addTo(map.current);
 
@@ -88,7 +100,10 @@ const ServiceAreaMap = () => {
           });
         }
       } catch (error) {
-        console.error('Error loading service area:', error);
+        // Log error (in production, send to error tracking service)
+        if (import.meta.env.DEV) {
+          console.error('Error loading service area:', error);
+        }
       }
     });
 

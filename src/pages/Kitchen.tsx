@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,11 +28,11 @@ const Kitchen = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from("orders")
       .select("*")
-      .in("status", ["pending", "preparing"])
+      .in("status", ["pending", "preparing", "paid"])
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -42,22 +42,40 @@ const Kitchen = () => {
       setOrders((data || []) as unknown as Order[]);
     }
     setLoading(false);
-  };
+  }, []);
 
-  const updateStatus = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: newStatus })
-      .eq("id", orderId);
+  const updateStatus = useCallback(async (orderId: string, newStatus: string) => {
+    // Optimistically update local state first
+    setOrders(prevOrders => {
+      const updated = prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      );
+      // Remove order if it's no longer in pending/preparing/paid status
+      return updated.filter(order => 
+        order.status === "pending" || order.status === "preparing" || order.status === "paid"
+      );
+    });
 
-    if (error) {
-      toast.error("Failed to update status");
-      console.error(error);
-    } else {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+      
       toast.success("Order status updated");
+      // Only refetch if we need to (order moved out of view)
+      if (newStatus !== "pending" && newStatus !== "preparing" && newStatus !== "paid") {
+        fetchOrders();
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+      // Refetch on error to restore correct state
       fetchOrders();
     }
-  };
+  }, [fetchOrders]);
 
   const handlePrintReceipt = (order: Order) => {
     try {
@@ -92,28 +110,34 @@ const Kitchen = () => {
           event: "*",
           schema: "public",
           table: "orders",
+          filter: `status=in.(pending,preparing,paid)`,
         },
-        () => {
-          fetchOrders();
+        (payload) => {
+          // Only refetch on insert or update that affects our filter
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            fetchOrders();
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channel).catch(console.error);
     };
-  }, []);
+  }, [fetchOrders]);
 
   const getStatusColor = (status: string) => {
     return status === "pending" ? "bg-yellow-500" : "bg-blue-500";
   };
 
-  const getTimeElapsed = (createdAt: string) => {
+  const getTimeElapsed = useCallback((createdAt: string) => {
     const minutes = Math.floor(
       (new Date().getTime() - new Date(createdAt).getTime()) / 60000
     );
+    if (minutes < 1) return "Just now";
+    if (minutes === 1) return "1 min";
     return `${minutes} min`;
-  };
+  }, []);
 
   if (loading) {
     return (

@@ -72,7 +72,8 @@ function PaymentForm({
   }, [elements]);
 
   const tax = cartTotal * 0.08875;
-  const total = cartTotal + tax;
+  const deliveryFee = orderType === 'delivery' ? 5.00 : 0;
+  const total = cartTotal + tax + deliveryFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +118,9 @@ function PaymentForm({
       }
 
       if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
+        // Order status is already 'pending' - no need to update
+        // The webhook will handle notifications when payment succeeds
+
         // Send confirmation email
         try {
           await supabase.functions.invoke('send-order-confirmation', {
@@ -178,6 +182,12 @@ function PaymentForm({
             <span className="text-muted-foreground">Tax (8.875%):</span>
             <span>${tax.toFixed(2)}</span>
           </div>
+          {orderType === 'delivery' && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Delivery Fee:</span>
+              <span>$5.00</span>
+            </div>
+          )}
           <Separator className="my-2" />
           <div className="flex justify-between font-semibold text-base">
             <span>Total:</span>

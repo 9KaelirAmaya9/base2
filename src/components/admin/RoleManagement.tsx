@@ -35,7 +35,7 @@ export const RoleManagement = () => {
     try {
       setIsLoading(true);
       
-      // Fetch all profiles with user emails from auth metadata
+      // Fetch all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, name");
@@ -50,7 +50,22 @@ export const RoleManagement = () => {
       if (rolesError) throw rolesError;
 
       // Get current user's email for reference
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      // Fetch emails from orders table (users who have placed orders)
+      const { data: ordersWithEmails } = await supabase
+        .from("orders")
+        .select("user_id, customer_email")
+        .not("user_id", "is", null)
+        .not("customer_email", "is", null);
+
+      // Create a map of user_id -> email from orders
+      const emailMap = new Map<string, string>();
+      ordersWithEmails?.forEach(order => {
+        if (order.user_id && order.customer_email) {
+          emailMap.set(order.user_id, order.customer_email);
+        }
+      });
 
       // Combine the data - show users that have either profiles or roles
       const userIds = new Set([
@@ -62,12 +77,30 @@ export const RoleManagement = () => {
         const profile = profiles?.find(p => p.user_id === userId);
         const userRoles = roles?.filter(r => r.user_id === userId).map(r => r.role) || [];
         
+        // Get email from: current user, orders, or show user ID
+        let email = "";
+        if (userId === currentUser?.id) {
+          email = currentUser.email || "";
+        } else if (emailMap.has(userId)) {
+          email = emailMap.get(userId)!;
+        } else {
+          // Show first 8 chars of user ID as fallback
+          email = `${userId.substring(0, 8)}...`;
+        }
+        
         return {
           id: userId,
-          email: userId === user?.id ? user.email || "" : "User",
+          email,
           name: profile?.name || null,
           roles: userRoles,
         };
+      });
+
+      // Sort by name, then email
+      usersWithRoles.sort((a, b) => {
+        const nameA = a.name || a.email;
+        const nameB = b.name || b.email;
+        return nameA.localeCompare(nameB);
       });
 
       setUsers(usersWithRoles);

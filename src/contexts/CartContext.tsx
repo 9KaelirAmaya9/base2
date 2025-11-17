@@ -134,25 +134,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           setCart(cartItems);
         }
       } else if (event === 'SIGNED_OUT') {
-        // Save to localStorage when signed out
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        // Get current cart state before saving
+        const currentCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+        if (currentCart.length > 0) {
+          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(currentCart));
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [cart]);
+  }, []);
 
-  // Persist cart changes
+  // Persist cart changes with debouncing
   useEffect(() => {
     if (isLoading) return;
 
-    const syncCart = async () => {
+    const timeoutId = setTimeout(async () => {
       if (userId) {
-        // Sync to database for authenticated users
-        await supabase.from('cart_items').delete().eq('user_id', userId);
-        
+        // Sync to database for authenticated users - use upsert instead of delete+insert
         if (cart.length > 0) {
-          await supabase.from('cart_items').insert(
+          const { error } = await supabase.from('cart_items').upsert(
             cart.map(item => ({
               user_id: userId,
               item_name: item.id,
@@ -161,16 +162,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
               quantity: item.quantity,
               image: item.image || '',
               category: ''
-            }))
+            })),
+            {
+              onConflict: 'user_id,item_name'
+            }
           );
+          
+          if (error) {
+            console.error('Error syncing cart to database:', error);
+          }
+        } else {
+          // Clear cart items if cart is empty
+          await supabase.from('cart_items').delete().eq('user_id', userId);
         }
       } else {
         // Save to localStorage for guest users
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
       }
-    };
+    }, 500); // Debounce by 500ms
 
-    syncCart();
+    return () => clearTimeout(timeoutId);
   }, [cart, userId, isLoading]);
 
   // Persist order type changes

@@ -83,9 +83,8 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
       
       // Reset state and re-check
       setIsLoading(true);
-      setTimeout(() => {
-        checkAuthAndRole();
-      }, 0);
+      // Use requestAnimationFrame for better timing, or directly call
+      checkAuthAndRole();
     });
 
     return () => {

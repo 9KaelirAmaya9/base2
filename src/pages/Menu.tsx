@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FlavorSelectionDialog } from "@/components/FlavorSelectionDialog";
 import { Plus, Filter } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
@@ -26,7 +26,7 @@ const Menu = () => {
   const [pendingItem, setPendingItem] = useState<{ id: string; name: string; price: number; image?: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const handleAddToCart = (item: { id: string; name: string; price: number; image?: string }) => {
+  const handleAddToCart = useCallback((item: { id: string; name: string; price: number; image?: string }) => {
     const translatedItem = {
       id: item.id,
       name: getMenuItemName(item.id, language, item.name),
@@ -41,9 +41,9 @@ const Menu = () => {
     } else {
       addToCart(translatedItem);
     }
-  };
+  }, [language, addToCart]);
 
-  const handleFlavorSelect = (flavor: string) => {
+  const handleFlavorSelect = useCallback((flavor: string) => {
     if (pendingItem) {
       const flavorLabel = flavor === "mango-habanero" ? "Mango Habanero" 
                         : flavor === "buffalo" ? "Buffalo" 
@@ -54,7 +54,27 @@ const Menu = () => {
       });
       setPendingItem(null);
     }
-  };
+  }, [pendingItem, addToCart]);
+
+  // Memoize filtered categories for performance
+  const filteredCategories = useMemo(() => {
+    return menuCategories.filter(
+      category => selectedCategory === "all" || category === selectedCategory
+    );
+  }, [selectedCategory]);
+
+  // Memoize category items mapping
+  const categoryItemsMap = useMemo(() => {
+    type MenuItemType = typeof menuItems[number];
+    const map = new Map<string, MenuItemType[]>();
+    menuCategories.forEach(category => {
+      const items = menuItems.filter(item => item.category === category);
+      if (items.length > 0) {
+        map.set(category, items);
+      }
+    });
+    return map;
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 festive-pattern relative">
@@ -96,12 +116,10 @@ const Menu = () => {
 
           {/* Menu by Category */}
           <div className="space-y-20">
-            {menuCategories
-              .filter(category => selectedCategory === "all" || category === selectedCategory)
-              .map((category) => {
-              const categoryItems = menuItems.filter(item => item.category === category);
+            {filteredCategories.map((category) => {
+              const categoryItems = categoryItemsMap.get(category);
               
-              if (categoryItems.length === 0) return null;
+              if (!categoryItems || categoryItems.length === 0) return null;
 
               return (
                 <section key={category} id={category.toLowerCase().replace(/\s+/g, '-')}>

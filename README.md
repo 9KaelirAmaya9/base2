@@ -1,73 +1,123 @@
-# Welcome to your Lovable project
+# La Taco Atelier - Restaurant Ordering System
 
-## Project info
+A full-stack restaurant ordering platform built with React, TypeScript, Supabase, and Stripe.
 
-**URL**: https://lovable.dev/projects/1c5a3260-4d54-412b-b8f8-4af54564df01
+## 🚀 Features
 
-## How can I edit this code?
+- **Menu Browsing**: Browse menu items with filtering and search
+- **Cart Management**: Add, update, and manage cart items
+- **Order Processing**: Place orders for pickup or delivery
+- **Payment Integration**: Secure Stripe payment processing
+- **Real-time Updates**: Live order updates for kitchen and admin
+- **Role-Based Access**: Admin and kitchen staff dashboards
+- **Delivery Validation**: Geospatial validation for 15-minute delivery zones
+- **Multi-language**: English and Spanish support
 
-There are several ways of editing your application.
+## 🛠️ Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **UI**: Tailwind CSS, shadcn/ui, Radix UI
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
+- **Payments**: Stripe
+- **Maps**: Mapbox (geocoding and directions)
+- **State Management**: React Context, React Query
+- **Routing**: React Router v6
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1c5a3260-4d54-412b-b8f8-4af54564df01) and start prompting.
+## 📋 Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ and npm
+- Supabase account and project
+- Stripe account
+- Mapbox account (for delivery validation)
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## 🔧 Setup
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Install dependencies
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Set up environment variables
+cp .env.example .env.local
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Add your Supabase and Stripe keys to .env.local
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_key
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Run development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+## 📚 Documentation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **[Comprehensive Testing Report](./COMPREHENSIVE_TESTING_REPORT.md)** - Full QA documentation
+- **[Testing Checklist](./TESTING_CHECKLIST.md)** - Testing checklist
+- **[Geospatial Validation](./GEOSPATIAL_VALIDATION.md)** - Delivery zone validation
 
-**Use GitHub Codespaces**
+## 🧪 Testing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Manual Testing
+See [TESTING_CHECKLIST.md](./TESTING_CHECKLIST.md) for complete testing procedures.
 
-## What technologies are used for this project?
+### Key Test Areas
+1. **Functionality**: All user flows and edge cases
+2. **Performance**: Load times, responsiveness, optimization
+3. **Security**: Authentication, authorization, data protection
+4. **Compatibility**: Cross-browser and device testing
+5. **Error Handling**: Network errors, validation, edge cases
+6. **User Experience**: Navigation, feedback, accessibility
 
-This project is built with:
+## 🔒 Security
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Row Level Security (RLS) on all database tables
+- Input validation with Zod schemas
+- XSS and SQL injection prevention
+- Secure payment processing via Stripe
+- Role-based access control
+- Protected routes for admin/kitchen
 
-## How can I deploy this project?
+## 📱 Browser Support
 
-Simply open [Lovable](https://lovable.dev/projects/1c5a3260-4d54-412b-b8f8-4af54564df01) and click on Share -> Publish.
+- Chrome/Edge (latest 2 versions)
+- Firefox (latest 2 versions)
+- Safari (latest 2 versions)
+- Mobile browsers (iOS Safari, Chrome Mobile)
 
-## Can I connect a custom domain to my Lovable project?
+## 🚀 Deployment
 
-Yes, you can!
+The project is configured for deployment on:
+- Lovable platform
+- Vercel
+- Netlify
+- Any static hosting service
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📖 Project Structure
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```
+src/
+├── components/     # Reusable UI components
+├── contexts/       # React contexts (Cart, Language)
+├── hooks/          # Custom React hooks
+├── integrations/   # Supabase client and types
+├── pages/          # Page components
+├── utils/          # Utility functions
+└── data/           # Static data (menu, translations)
+```
+
+## 🐛 Troubleshooting
+
+See [COMPREHENSIVE_TESTING_REPORT.md](./COMPREHENSIVE_TESTING_REPORT.md) section 8.4 for troubleshooting guide.
+
+## 📝 License
+
+Private project - All rights reserved
+
+## 👥 Support
+
+For issues or questions, refer to the documentation files or contact the development team.

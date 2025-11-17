@@ -58,27 +58,13 @@ const Cart = () => {
     const orderNumber = searchParams.get("order_number");
     
     if (success === "true" && orderNumber) {
-      // Update order status to paid
-      const updateOrderStatus = async () => {
-        try {
-          const { error } = await supabase
-            .from("orders")
-            .update({ status: "paid" })
-            .eq("order_number", orderNumber);
-          
-          if (error) {
-            console.error("Error updating order status:", error);
-          }
-        } catch (err) {
-          console.error("Failed to update order:", err);
-        }
-      };
-      
-      updateOrderStatus();
-      toast.success(`Payment successful! Order #${orderNumber} is confirmed and paid.`);
+      // Order status is already updated by SecurePaymentModal or webhook
+      // Just show success and redirect
+      toast.success(`Payment successful! Order #${orderNumber} is confirmed.`);
       clearCart();
-      // Clean up URL parameters
+      // Clean up URL parameters and redirect to success page
       window.history.replaceState({}, '', '/cart');
+      navigate(`/order-success?order_number=${encodeURIComponent(orderNumber)}`);
     } else if (searchParams.get("canceled") === "true") {
       toast.error("Payment was canceled. Your cart items are still here.");
       window.history.replaceState({}, '', '/cart');
@@ -118,15 +104,28 @@ const Cart = () => {
       return;
     }
 
-    // Validate delivery zone
+    // Validate delivery zone with geospatial accuracy
     if (orderType === "delivery") {
       const deliveryValidation = await validateDeliveryAddress(customerInfo.address);
       if (!deliveryValidation.isValid) {
-        toast.error(deliveryValidation.message || "Invalid delivery address");
+        // Show error with pickup suggestion if outside zone
+        if (deliveryValidation.suggestPickup) {
+          toast.error(deliveryValidation.message || "We apologize, but delivery isn't available to this location. Pickup is always available!", {
+            duration: 6000,
+            action: {
+              label: "Switch to Pickup",
+              onClick: () => setOrderType("pickup")
+            }
+          });
+        } else {
+          toast.error(deliveryValidation.message || "Invalid delivery address");
+        }
         return;
       }
       if (deliveryValidation.estimatedMinutes) {
-        toast.success(deliveryValidation.message || `Estimated delivery: ${deliveryValidation.estimatedMinutes} min`);
+        toast.success(deliveryValidation.message || `Estimated delivery: ${deliveryValidation.estimatedMinutes} min`, {
+          duration: 4000
+        });
       }
     }
 
@@ -135,7 +134,8 @@ const Cart = () => {
     try {
       const subtotal = cartTotal;
       const tax = subtotal * 0.08875; // NYC sales tax: 8.875%
-      const total = subtotal + tax;
+      const deliveryFee = orderType === "delivery" ? 5.00 : 0; // $5 delivery fee
+      const total = subtotal + tax + deliveryFee;
 
       // Get current user if authenticated
       const { data: { session } } = await supabase.auth.getSession();
@@ -155,7 +155,7 @@ const Cart = () => {
           items: cart as any,
           subtotal,
           tax,
-          total,
+          total: total, // Include delivery fee in total
           notes: validation.data.notes || null,
           status: "pending",
         }], { returning: 'minimal' } as any);
@@ -380,6 +380,9 @@ const Cart = () => {
                             placeholder="Street address, apt #, city, zip"
                             rows={3}
                           />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            We deliver within a 15-minute drive from our restaurant. If you're outside this zone, pickup is always available!
+                          </p>
                         </div>
                       )}
 
@@ -405,9 +408,17 @@ const Cart = () => {
                           <span className="text-muted-foreground">Tax (NYC 8.875%)</span>
                           <span>${(cartTotal * 0.08875).toFixed(2)}</span>
                         </div>
+                        {orderType === "delivery" && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Delivery Fee</span>
+                            <span>$5.00</span>
+                          </div>
+                        )}
                         <div className="flex justify-between items-center text-lg font-semibold pt-2 border-t border-border">
                           <span>{t("order.total")}</span>
-                          <span className="text-primary">${(cartTotal * 1.08875).toFixed(2)}</span>
+                          <span className="text-primary">
+                            ${(cartTotal * 1.08875 + (orderType === "delivery" ? 5.00 : 0)).toFixed(2)}
+                          </span>
                         </div>
                       </div>
 

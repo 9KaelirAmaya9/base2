@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,23 +22,28 @@ export default function AdminOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("orders")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(1000); // Limit to prevent memory issues
 
       if (error) throw error;
-      setOrders(data as Order[] || []);
-      setFilteredOrders(data as Order[] || []);
+      const ordersData = (data as Order[]) || [];
+      setOrders(ordersData);
+      setFilteredOrders(ordersData);
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to load orders");
+      setOrders([]);
+      setFilteredOrders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -53,16 +58,19 @@ export default function AdminOrders() {
           schema: "public",
           table: "orders",
         },
-        () => {
-          fetchOrders();
+        (payload) => {
+          // Only refetch if it's an insert or update that affects our filters
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            fetchOrders();
+          }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channel).catch(console.error);
     };
-  }, []);
+  }, [fetchOrders]);
 
   useEffect(() => {
     let filtered = orders;
@@ -83,20 +91,35 @@ export default function AdminOrders() {
     setFilteredOrders(filtered);
   }, [searchTerm, statusFilter, orders]);
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = useCallback(async (orderId: string, newStatus: string) => {
     try {
+      // Optimistically update local state first
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+      setFilteredOrders(prevFiltered => 
+        prevFiltered.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+
       const { error } = await supabase
         .from("orders")
         .update({ status: newStatus })
         .eq("id", orderId);
 
       if (error) throw error;
+      
       toast.success("Order status updated");
     } catch (error) {
       console.error("Error updating order:", error);
       toast.error("Failed to update order status");
+      // Refetch on error to ensure consistency
+      fetchOrders();
     }
-  };
+  }, [fetchOrders]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -209,9 +232,11 @@ export default function AdminOrders() {
                           onValueChange={(value) => updateOrderStatus(order.id, value)}
                         >
                           <SelectTrigger className="w-[130px]">
-                            <Badge className={getStatusColor(order.status)}>
-                              {order.status}
-                            </Badge>
+                            <SelectValue>
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(order.status)} text-white`}>
+                                {order.status}
+                              </span>
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="pending">Pending</SelectItem>

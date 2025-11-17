@@ -24,7 +24,20 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Send to Sentry error tracking
+    import('@/utils/sentry').then(({ captureException }) => {
+      captureException(error, {
+        type: 'reactErrorBoundary',
+        componentStack: errorInfo.componentStack,
+      });
+    }).catch(() => {
+      // Silently fail if Sentry not available
+    });
+    
+    // Log to console in development
+    if (import.meta.env.DEV) {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    }
   }
 
   private handleReset = () => {
@@ -47,10 +60,11 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="mb-4">
                 We're sorry, but something unexpected happened. Please try refreshing the page or contact support if the problem persists.
               </p>
-              {this.state.error && (
+              {/* Error details hidden in production for security */}
+              {this.state.error && import.meta.env.DEV && (
                 <details className="mb-4">
                   <summary className="cursor-pointer text-sm font-medium">
-                    Error details
+                    Error details (dev only)
                   </summary>
                   <pre className="mt-2 text-xs overflow-auto p-2 bg-muted rounded">
                     {this.state.error.toString()}

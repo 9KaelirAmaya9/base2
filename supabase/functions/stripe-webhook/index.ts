@@ -42,7 +42,46 @@ serve(async (req) => {
 
     console.log('Webhook event type:', event.type);
 
-    // Handle the checkout.session.completed event
+    // Handle payment_intent.succeeded (for PaymentIntent flow)
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const orderNumber = paymentIntent.metadata?.order_number;
+
+      if (orderNumber) {
+        // Order is already created with status 'pending', keep it as pending for kitchen workflow
+        // The order will be processed by kitchen staff
+        console.log('Payment succeeded for order:', orderNumber);
+        
+        // Get order details for notification
+        const { data: order } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('order_number', orderNumber)
+          .single();
+
+        if (order) {
+          // Send notification to kitchen
+          try {
+            await supabase.functions.invoke('send-order-notification', {
+              body: {
+                orderNumber: order.order_number,
+                customerName: order.customer_name,
+                customerEmail: order.customer_email,
+                customerPhone: order.customer_phone,
+                orderType: order.order_type,
+                total: order.total,
+                items: order.items,
+              }
+            });
+            console.log('Notification sent for order:', orderNumber);
+          } catch (notifError) {
+            console.error('Failed to send notification:', notifError);
+          }
+        }
+      }
+    }
+
+    // Handle the checkout.session.completed event (for Checkout Session flow)
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       const orderNumber = session.metadata?.order_number;
@@ -55,16 +94,9 @@ serve(async (req) => {
         );
       }
 
-      // Update order status to completed
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ status: 'pending' })
-        .eq('order_number', orderNumber);
-
-      if (updateError) {
-        console.error('Error updating order:', updateError);
-        throw updateError;
-      }
+      // Order is already created with status 'pending', keep it as pending for kitchen workflow
+      // The order will be processed by kitchen staff
+      console.log('Checkout session completed for order:', orderNumber);
 
       // Get order details for notification
       const { data: order } = await supabase
