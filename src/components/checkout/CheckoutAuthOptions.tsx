@@ -15,6 +15,7 @@ interface CheckoutAuthOptionsProps {
 
 export const CheckoutAuthOptions = ({ onContinueAsGuest, onAuthSuccess }: CheckoutAuthOptionsProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -207,20 +208,35 @@ export const CheckoutAuthOptions = ({ onContinueAsGuest, onAuthSuccess }: Checko
               Continue without creating an account. You'll still receive order updates via email.
             </p>
             <Button 
-              onClick={() => {
+              onClick={async () => {
                 console.log("Continue as Guest button clicked");
                 console.log("onContinueAsGuest function:", typeof onContinueAsGuest);
+                setIsGuestLoading(true);
                 try {
-                  onContinueAsGuest();
+                  await onContinueAsGuest();
+                  console.log("onContinueAsGuest completed");
                 } catch (err) {
                   console.error("Error calling onContinueAsGuest:", err);
+                  toast.error("Failed to process order. Check console for details.");
+                } finally {
+                  setIsGuestLoading(false);
                 }
               }} 
               className="w-full"
               size="lg"
+              disabled={isGuestLoading}
             >
-              <ShoppingBag className="mr-2 h-4 w-4" />
-              Continue as Guest
+              {isGuestLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Continue as Guest
+                </>
+              )}
             </Button>
           </TabsContent>
         </Tabs>
