@@ -20,6 +20,7 @@ import OrderHistory from "./pages/OrderHistory";
 import Logout from "./pages/Logout";
 import Admin from "./pages/Admin";
 import AdminOrders from "./pages/AdminOrders";
+import AdminRoles from "./pages/AdminRoles";
 import Kitchen from "./pages/Kitchen";
 import KitchenLogin from "./pages/KitchenLogin";
 import Dashboard from "./pages/Dashboard";
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
                 <Route path="/admin/orders" element={<ProtectedRoute requiredRole="admin"><AdminOrders /></ProtectedRoute>} />
+                <Route path="/admin/roles" element={<ProtectedRoute requiredRole="admin"><AdminRoles /></ProtectedRoute>} />
                 <Route path="/kitchen" element={<ProtectedRoute requiredRole="kitchen"><Kitchen /></ProtectedRoute>} />
                 <Route path="/order-success" element={<OrderSuccess />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

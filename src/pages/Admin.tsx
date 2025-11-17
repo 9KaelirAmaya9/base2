@@ -172,7 +172,11 @@ const Admin = () => {
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => navigate("/admin/orders")} size="sm">
                   <ClipboardList className="h-4 w-4 mr-2" />
-                  Order Tracking
+                  Orders
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/admin/roles")} size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  Roles
                 </Button>
                 <Button variant="outline" onClick={handleSignOut} size="sm">
                   <LogOut className="h-4 w-4 mr-2" />
@@ -198,7 +202,7 @@ const Admin = () => {
                 <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium">Total Orders</CardTitle>
@@ -206,13 +210,24 @@ const Admin = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-xl md:text-2xl font-bold">{orders.length}</div>
-                <p className="text-xs text-muted-foreground">Done: {completedOrders}</p>
+                <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs md:text-sm font-medium">Avg Order</CardTitle>
+                <CardTitle className="text-xs md:text-sm font-medium">Completed</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl md:text-2xl font-bold">{completedOrders}</div>
+                <p className="text-xs text-muted-foreground">Orders</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs md:text-sm font-medium">Avg. Order Value</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -220,21 +235,7 @@ const Admin = () => {
                 <p className="text-xs text-muted-foreground">Per order</p>
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs md:text-sm font-medium">Pending</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-xl md:text-2xl font-bold">{pendingOrders}</div>
-                <p className="text-xs text-muted-foreground">Active</p>
-              </CardContent>
-            </Card>
           </div>
-
-          {/* Role Management */}
-          <RoleManagement />
 
           {/* Orders List */}
           <Card>
