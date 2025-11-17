@@ -37,6 +37,9 @@ const Cart = () => {
   const [currentOrderNumber, setCurrentOrderNumber] = useState<string | null>(null);
   const [showAuthOptions, setShowAuthOptions] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number; description?: string } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   useEffect(() => {
     // Check auth status
@@ -133,9 +136,11 @@ const Cart = () => {
 
     try {
       const subtotal = cartTotal;
-      const tax = subtotal * 0.08875; // NYC sales tax: 8.875%
+      const discountAmount = appliedCoupon?.discount_amount || 0;
+      const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
+      const tax = subtotalAfterDiscount * 0.08875; // NYC sales tax: 8.875%
       const deliveryFee = orderType === "delivery" ? 5.00 : 0; // $5 delivery fee
-      const total = subtotal + tax + deliveryFee;
+      const total = subtotalAfterDiscount + tax + deliveryFee;
 
       // Get current user if authenticated
       const { data: { session } } = await supabase.auth.getSession();
@@ -156,6 +161,8 @@ const Cart = () => {
           subtotal,
           tax,
           total: total, // Include delivery fee in total
+          coupon_code: appliedCoupon?.code || null,
+          discount_amount: discountAmount,
           notes: validation.data.notes || null,
           status: "pending",
         }], { returning: 'minimal' } as any);
@@ -197,6 +204,8 @@ const Cart = () => {
             orderType,
             customerInfo: validation.data,
             orderNumber,
+            couponCode: appliedCoupon?.code || null,
+            discountAmount: discountAmount,
           }
         }
       );
@@ -416,14 +425,91 @@ const Cart = () => {
                     </div>
 
                     <div className="space-y-4">
+                      {/* Coupon Code Input */}
+                      <div className="space-y-2">
+                        <Label htmlFor="coupon">Promo Code (Optional)</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="coupon"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            placeholder="Enter code"
+                            disabled={!!appliedCoupon || isValidatingCoupon}
+                            className="flex-1"
+                          />
+                          {appliedCoupon ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setAppliedCoupon(null);
+                                setCouponCode("");
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={async () => {
+                                if (!couponCode.trim()) return;
+                                setIsValidatingCoupon(true);
+                                try {
+                                  const subtotal = cartTotal;
+                                  const tax = subtotal * 0.08875;
+                                  const deliveryFee = orderType === "delivery" ? 5.00 : 0;
+                                  const orderAmount = subtotal + tax + deliveryFee;
+
+                                  const { data, error } = await supabase.functions.invoke('validate-coupon', {
+                                    body: { code: couponCode.trim(), orderAmount }
+                                  });
+
+                                  if (error || !data?.valid) {
+                                    toast.error(data?.error || 'Invalid coupon code');
+                                    return;
+                                  }
+
+                                  setAppliedCoupon({
+                                    code: data.coupon.code,
+                                    discount_amount: data.coupon.discount_amount,
+                                    description: data.coupon.description,
+                                  });
+                                  toast.success(`Coupon "${data.coupon.code}" applied! ${data.coupon.description || ''}`);
+                                } catch (err: any) {
+                                  toast.error(err?.message || 'Failed to validate coupon');
+                                } finally {
+                                  setIsValidatingCoupon(false);
+                                }
+                              }}
+                              disabled={isValidatingCoupon || !couponCode.trim()}
+                            >
+                              {isValidatingCoupon ? "..." : "Apply"}
+                            </Button>
+                          )}
+                        </div>
+                        {appliedCoupon && (
+                          <p className="text-sm text-green-600 dark:text-green-400">
+                            ✓ {appliedCoupon.code} applied: -${appliedCoupon.discount_amount.toFixed(2)}
+                            {appliedCoupon.description && ` (${appliedCoupon.description})`}
+                          </p>
+                        )}
+                      </div>
+
                       <div className="space-y-2 py-4 border-t border-border">
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground">Subtotal</span>
                           <span>${cartTotal.toFixed(2)}</span>
                         </div>
+                        {appliedCoupon && (
+                          <div className="flex justify-between items-center text-green-600 dark:text-green-400">
+                            <span>Discount ({appliedCoupon.code})</span>
+                            <span>-${appliedCoupon.discount_amount.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground">Tax (NYC 8.875%)</span>
-                          <span>${(cartTotal * 0.08875).toFixed(2)}</span>
+                          <span>${((cartTotal - (appliedCoupon?.discount_amount || 0)) * 0.08875).toFixed(2)}</span>
                         </div>
                         {orderType === "delivery" && (
                           <div className="flex justify-between items-center">
@@ -434,7 +520,7 @@ const Cart = () => {
                         <div className="flex justify-between items-center text-lg font-semibold pt-2 border-t border-border">
                           <span>{t("order.total")}</span>
                           <span className="text-primary">
-                            ${(cartTotal * 1.08875 + (orderType === "delivery" ? 5.00 : 0)).toFixed(2)}
+                            ${((cartTotal - (appliedCoupon?.discount_amount || 0)) * 1.08875 + (orderType === "delivery" ? 5.00 : 0)).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -470,6 +556,8 @@ const Cart = () => {
                           onSuccess={() => {
                             clearCart();
                             setCustomerInfo({ name: "", phone: "", email: "", address: "", notes: "" });
+                            setAppliedCoupon(null);
+                            setCouponCode("");
                             setShowCheckout(false);
                             setCheckoutClientSecret(null);
                             setCheckoutPublishableKey(null);

@@ -40,7 +40,7 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const { items, orderType, customerInfo, orderNumber } = await req.json();
+    const { items, orderType, customerInfo, orderNumber, couponCode, discountAmount } = await req.json();
 
     // Validate input parameters (allows guest checkout)
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -87,9 +87,13 @@ serve(async (req) => {
       return sum + price * qty;
     }, 0);
 
-    const taxCents = Math.round(subtotalCents * 0.08875); // NYC 8.875%
+    // Apply discount if provided
+    const discountCents = Math.round((Number(discountAmount) || 0) * 100);
+    const subtotalAfterDiscount = Math.max(0, subtotalCents - discountCents);
+
+    const taxCents = Math.round(subtotalAfterDiscount * 0.08875); // NYC 8.875%
     const deliveryFeeCents = orderType === "delivery" ? 500 : 0; // $5 delivery fee
-    const amount = subtotalCents + taxCents + deliveryFeeCents;
+    const amount = subtotalAfterDiscount + taxCents + deliveryFeeCents;
 
     if (amount <= 0) throw new Error("Calculated amount must be greater than 0");
 
@@ -107,6 +111,8 @@ serve(async (req) => {
         customer_phone: customerInfo?.phone || "",
         order_type: orderType || "",
         delivery_address: customerInfo?.address || "",
+        coupon_code: couponCode || "",
+        discount_amount: discountAmount ? String(discountAmount) : "",
       },
       description: `Order ${orderNumber}`,
     });
