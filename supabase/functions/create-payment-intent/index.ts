@@ -61,12 +61,22 @@ serve(async (req) => {
       throw new Error("Too many items in order (max 50)");
     }
 
+    if (items.length === 0) {
+      throw new Error("No items in order");
+    }
+
     for (const item of items) {
-      if (!item.name || typeof item.price !== 'number' || item.price < 0 || item.price > 1000) {
-        throw new Error("Invalid item data");
+      if (!item || typeof item !== 'object') {
+        throw new Error(`Invalid item format: ${JSON.stringify(item)}`);
       }
-      if (typeof item.quantity !== 'number' || item.quantity < 1 || item.quantity > 100) {
-        throw new Error("Invalid item quantity");
+      if (!item.name || typeof item.name !== 'string' || item.name.trim().length === 0) {
+        throw new Error(`Invalid item name: ${JSON.stringify(item)}`);
+      }
+      if (typeof item.price !== 'number' || isNaN(item.price) || item.price < 0 || item.price > 1000) {
+        throw new Error(`Invalid item price for ${item.name}: ${item.price}. Price must be between 0 and 1000.`);
+      }
+      if (typeof item.quantity !== 'number' || isNaN(item.quantity) || item.quantity < 1 || item.quantity > 100) {
+        throw new Error(`Invalid item quantity for ${item.name}: ${item.quantity}. Quantity must be between 1 and 100.`);
       }
     }
 

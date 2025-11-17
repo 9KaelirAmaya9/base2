@@ -182,11 +182,18 @@ const Cart = () => {
       }
 
       // Create PaymentIntent for secure modal checkout
+      // Map cart items to the format expected by the payment function
+      const paymentItems = cart.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
       const { data: piData, error: piError } = await supabase.functions.invoke(
         'create-payment-intent',
         {
           body: {
-            items: cart,
+            items: paymentItems,
             orderType,
             customerInfo: validation.data,
             orderNumber,
@@ -194,7 +201,12 @@ const Cart = () => {
         }
       );
 
-      if (piError) throw piError;
+      if (piError) {
+        console.error("Payment intent error:", piError);
+        // Show the actual error message if available
+        const errorMessage = piError.message || piError.error || "Failed to create payment intent";
+        throw new Error(errorMessage);
+      }
 
       if (piData?.clientSecret && piData?.publishableKey) {
         setCurrentOrderNumber(orderNumber);
@@ -204,13 +216,18 @@ const Cart = () => {
         setIsProcessing(false);
         return;
       } else {
-        throw new Error('Failed to create payment intent');
+        console.error("Payment intent response missing data:", piData);
+        throw new Error('Payment service returned invalid data. Please try again.');
       }
 
 
     } catch (error: any) {
       console.error("Order error:", error);
-      toast.error("Failed to process payment. Please try again.");
+      // Show the actual error message to help debug
+      const errorMessage = error?.message || error?.error || "Failed to process payment. Please try again.";
+      toast.error(errorMessage, {
+        duration: 5000,
+      });
       setIsProcessing(false);
     }
   };
