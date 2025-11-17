@@ -151,7 +151,19 @@ const Cart = () => {
       
       // Generate order number on client to avoid needing SELECT permissions
       const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
-      const { error } = await supabase
+      
+      console.log("Creating order as:", session?.user?.id ? "authenticated" : "guest");
+      console.log("Order data:", {
+        order_number: orderNumber,
+        user_id: session?.user?.id || null,
+        customer_name: validation.data.name,
+        customer_email: validation.data.email,
+        customer_phone: validation.data.phone,
+        order_type: orderType,
+        items_count: cart.length,
+      });
+      
+      const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .insert([{
           order_number: orderNumber,
@@ -171,7 +183,12 @@ const Cart = () => {
           status: "pending",
         }], { returning: 'minimal' } as any);
 
-      if (error) throw error;
+      if (orderError) {
+        console.error("Order creation error:", orderError);
+        throw new Error(`Failed to create order: ${orderError.message || JSON.stringify(orderError)}`);
+      }
+      
+      console.log("Order created successfully:", orderNumber);
 
       // Send push notification to kitchen staff and admins
       try {
@@ -200,6 +217,9 @@ const Cart = () => {
         quantity: item.quantity,
       }));
 
+      console.log("Creating payment intent for order:", orderNumber);
+      console.log("Payment items:", paymentItems);
+      
       const { data: piData, error: piError } = await supabase.functions.invoke(
         'create-payment-intent',
         {
@@ -215,13 +235,25 @@ const Cart = () => {
       );
 
       if (piError) {
-        console.error("Payment intent error:", piError);
+        console.error("Payment intent error details:", {
+          error: piError,
+          message: piError.message,
+          error_code: piError.error,
+          full_error: JSON.stringify(piError, null, 2)
+        });
         // Show the actual error message if available
         const errorMessage = piError.message || piError.error || "Failed to create payment intent";
-        throw new Error(errorMessage);
+        throw new Error(`Payment error: ${errorMessage}`);
       }
 
+      console.log("Payment intent response:", {
+        hasClientSecret: !!piData?.clientSecret,
+        hasPublishableKey: !!piData?.publishableKey,
+        data: piData
+      });
+
       if (piData?.clientSecret && piData?.publishableKey) {
+        console.log("Opening payment modal for order:", orderNumber);
         setCurrentOrderNumber(orderNumber);
         setCheckoutClientSecret(piData.clientSecret as string);
         setCheckoutPublishableKey(piData.publishableKey as string);
@@ -235,11 +267,28 @@ const Cart = () => {
 
 
     } catch (error: any) {
-      console.error("Order error:", error);
+      console.error("=== CHECKOUT ERROR ===");
+      console.error("Error type:", typeof error);
+      console.error("Error object:", error);
+      console.error("Error message:", error?.message);
+      console.error("Error stack:", error?.stack);
+      console.error("Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      console.error("=====================");
+      
       // Show the actual error message to help debug
-      const errorMessage = error?.message || error?.error || "Failed to process payment. Please try again.";
+      let errorMessage = "Failed to process order. Please try again.";
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.error) {
+        errorMessage = error.error;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast.error(errorMessage, {
-        duration: 5000,
+        duration: 8000,
+        description: "Check the browser console (F12) for more details",
       });
       setIsProcessing(false);
     }
