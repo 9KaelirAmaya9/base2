@@ -124,12 +124,19 @@ const Cart = () => {
       return;
     }
 
-    // Validate delivery zone with geospatial accuracy
+    // Validate delivery zone with geospatial accuracy (non-blocking for guest checkout)
     if (orderType === "delivery") {
       console.log("Validating delivery address:", customerInfo.address);
       try {
-        const deliveryValidation = await validateDeliveryAddress(customerInfo.address);
+        // Set a timeout for delivery validation to prevent blocking
+        const validationPromise = validateDeliveryAddress(customerInfo.address);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Delivery validation timeout")), 5000)
+        );
+        
+        const deliveryValidation = await Promise.race([validationPromise, timeoutPromise]) as any;
         console.log("Delivery validation result:", deliveryValidation);
+        
         if (!deliveryValidation.isValid) {
           // Show error with pickup suggestion if outside zone
           if (deliveryValidation.suggestPickup) {
@@ -140,22 +147,27 @@ const Cart = () => {
                 onClick: () => setOrderType("pickup")
               }
             });
+            return;
           } else {
             toast.error(deliveryValidation.message || "Invalid delivery address");
+            return;
           }
-          return;
         }
         if (deliveryValidation.estimatedMinutes) {
           toast.success(deliveryValidation.message || `Estimated delivery: ${deliveryValidation.estimatedMinutes} min`, {
             duration: 4000
           });
         }
-      } catch (deliveryError) {
-        console.error("Delivery validation error:", deliveryError);
-        // Don't block checkout if delivery validation fails - just warn
+      } catch (deliveryError: any) {
+        console.error("Delivery validation error (non-blocking):", deliveryError);
+        // Don't block checkout if delivery validation fails or times out - just warn
+        if (deliveryError.message === "Delivery validation timeout") {
+          console.warn("Delivery validation timed out - proceeding anyway");
+        }
         toast.warning("Could not validate delivery address. Proceeding anyway...", {
           duration: 3000
         });
+        // Continue with checkout even if validation fails
       }
     } else {
       console.log("Pickup order - skipping delivery validation");
