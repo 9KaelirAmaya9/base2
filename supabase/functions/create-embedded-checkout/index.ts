@@ -13,27 +13,23 @@ serve(async (req) => {
   }
 
   try {
-    // Verify JWT token
+    // Allow both authenticated and anonymous users for checkout
+    // But validate the request data to prevent abuse
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
-    }
+    let userId: string | null = null;
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    // If auth header exists, verify it (optional for guest checkout)
+    if (authHeader) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+      }
     }
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -42,8 +38,30 @@ serve(async (req) => {
 
     const { items, orderType, customerInfo, orderNumber } = await req.json();
 
+    // Validate request data to prevent abuse
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('No items provided');
+    }
+
+    if (!customerInfo || !customerInfo.name || !customerInfo.phone || !customerInfo.email) {
+      throw new Error("Missing required customer information");
+    }
+
+    if (!orderNumber || typeof orderNumber !== 'string') {
+      throw new Error("Invalid order number");
+    }
+
+    if (items.length > 50) {
+      throw new Error("Too many items in order");
+    }
+
+    for (const item of items) {
+      if (!item.name || typeof item.price !== 'number' || item.price < 0 || item.price > 1000) {
+        throw new Error("Invalid item data");
+      }
+      if (typeof item.quantity !== 'number' || item.quantity < 1 || item.quantity > 100) {
+        throw new Error("Invalid item quantity");
+      }
     }
 
     const origin = req.headers.get('origin') || 'https://1c5a3260-4d54-412b-b8f8-4af54564df01.lovableproject.com';
