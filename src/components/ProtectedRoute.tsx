@@ -58,9 +58,28 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
           console.error("Role check error:", roleError);
           setHasRole(false);
         } else {
-          const userHasRole = roles?.some(
+          let userHasRole = roles?.some(
             (r) => r.role === requiredRole || (requiredRole === 'kitchen' && r.role === 'admin')
           ) ?? false;
+
+          // Attempt first-admin bootstrap if needed
+          if (!userHasRole && requiredRole === 'admin') {
+            try {
+              const { data: granted, error: bootstrapError } = await supabase.rpc('bootstrap_admin');
+              if (bootstrapError) {
+                console.error('Bootstrap admin error:', bootstrapError);
+              } else if (granted === true) {
+                const { data: rolesAfter } = await supabase
+                  .from('user_roles')
+                  .select('role')
+                  .eq('user_id', session.user.id);
+                userHasRole = rolesAfter?.some((r) => r.role === 'admin') ?? false;
+              }
+            } catch (e) {
+              console.error('Bootstrap admin exception:', e);
+            }
+          }
+
           setHasRole(userHasRole);
         }
       } catch (e) {
