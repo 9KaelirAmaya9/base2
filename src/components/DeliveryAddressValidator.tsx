@@ -51,13 +51,21 @@ const DeliveryAddressValidator = ({
   // Initialize Mapbox token
   useEffect(() => {
     const fetchToken = async () => {
+      console.log('🔄 DeliveryAddressValidator: Fetching Mapbox token for autocomplete map...');
       try {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
-        if (!error && data?.token) {
+        if (error) {
+          console.error('❌ DeliveryAddressValidator: Error fetching token:', error);
+          return;
+        }
+        if (data?.token) {
           mapboxgl.accessToken = data.token;
+          console.log('✅ DeliveryAddressValidator: Mapbox token configured');
+        } else {
+          console.error('❌ DeliveryAddressValidator: No token in response');
         }
       } catch (error) {
-        console.error('Error loading Mapbox token:', error);
+        console.error('❌ DeliveryAddressValidator: Error loading Mapbox token:', error);
       }
     };
     fetchToken();
@@ -84,6 +92,7 @@ const DeliveryAddressValidator = ({
       return;
     }
 
+    console.log('🔍 DeliveryAddressValidator: Fetching suggestions for:', query);
     setLoadingSuggestions(true);
     setAutocompleteError(null);
     try {
@@ -92,16 +101,17 @@ const DeliveryAddressValidator = ({
       });
 
       if (error) {
-        console.error('Autocomplete error:', error);
+        console.error('❌ DeliveryAddressValidator: Autocomplete error:', error);
         setAutocompleteError('Unable to load address suggestions. Please type your full address.');
         setSuggestions([]);
         setShowSuggestions(false);
       } else {
+        console.log('✅ DeliveryAddressValidator: Received', data?.suggestions?.length || 0, 'suggestions');
         setSuggestions(data?.suggestions || []);
         setShowSuggestions((data?.suggestions || []).length > 0);
       }
     } catch (error) {
-      console.error('Autocomplete error:', error);
+      console.error('❌ DeliveryAddressValidator: Network error:', error);
       setAutocompleteError('Network error. Please check your connection and try again.');
       setSuggestions([]);
       setShowSuggestions(false);
@@ -209,11 +219,13 @@ const DeliveryAddressValidator = ({
   const handleValidate = async () => {
     if (!address.trim()) return;
 
+    console.log('🔍 DeliveryAddressValidator: Validating address:', address);
     setValidating(true);
     setResult(null);
 
     try {
       const validationResult = await validateDeliveryAddress(address);
+      console.log('✅ DeliveryAddressValidator: Validation result:', validationResult);
       const result = {
         isValid: validationResult.isValid,
         message: validationResult.message || '',
@@ -230,6 +242,7 @@ const DeliveryAddressValidator = ({
         });
       }
     } catch (error) {
+      console.error('❌ DeliveryAddressValidator: Validation error:', error);
       setResult({
         isValid: false,
         message: 'Unable to validate address. Please try again.',

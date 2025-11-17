@@ -28,18 +28,25 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
   useEffect(() => {
     // Fetch Mapbox token from backend
     const fetchToken = async () => {
+      console.log('🔄 ServiceAreaMap: Fetching Mapbox token...');
       try {
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
-        if (error) throw error;
+        if (error) {
+          console.error('❌ ServiceAreaMap: Error from edge function:', error);
+          throw error;
+        }
         
         if (data?.token) {
+          console.log('✅ ServiceAreaMap: Mapbox token received (length:', data.token.length, ')');
           setMapboxToken(data.token);
           mapboxgl.accessToken = data.token;
-          console.log('✅ Mapbox token loaded successfully');
+          console.log('✅ ServiceAreaMap: Mapbox token configured successfully');
+        } else {
+          console.error('❌ ServiceAreaMap: No token in response:', data);
         }
       } catch (error) {
-        console.error('Error loading Mapbox token:', error);
+        console.error('❌ ServiceAreaMap: Error loading Mapbox token:', error);
         setZoneError('Unable to load map configuration. Please refresh the page.');
       }
     };
@@ -48,19 +55,34 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
   }, []);
 
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || map.current) return;
+    if (!mapContainer.current || !mapboxToken || map.current) {
+      console.log('🔄 ServiceAreaMap: Waiting for prerequisites...', {
+        hasContainer: !!mapContainer.current,
+        hasToken: !!mapboxToken,
+        hasMap: !!map.current
+      });
+      return;
+    }
 
+    console.log('✅ ServiceAreaMap: Initializing map...');
     const restaurantCoords: [number, number] = [-74.0060, 40.6501]; // 505 51st Street, Brooklyn
 
     // Initialize map with optimal settings to show restaurant and surrounding area
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12', // Detailed street map showing neighborhoods
-      center: restaurantCoords,
-      zoom: 12, // Initial zoom - will be adjusted when zone loads
-      pitch: 0, // Flat view for better area visibility
-      bearing: 0, // North-up orientation
-    });
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12', // Detailed street map showing neighborhoods
+        center: restaurantCoords,
+        zoom: 12, // Initial zoom - will be adjusted when zone loads
+        pitch: 0, // Flat view for better area visibility
+        bearing: 0, // North-up orientation
+      });
+      console.log('✅ ServiceAreaMap: Map instance created');
+    } catch (error) {
+      console.error('❌ ServiceAreaMap: Error creating map:', error);
+      setZoneError('Failed to initialize map. Please check your connection.');
+      return;
+    }
 
     // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
