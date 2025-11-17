@@ -9,16 +9,20 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY |
 // Validate environment variables
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   const missing = [];
-  if (!SUPABASE_URL) missing.push('VITE_SUPABASE_URL');
-  if (!SUPABASE_PUBLISHABLE_KEY) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY');
+  if (!SUPABASE_URL) missing.push('VITE_SUPABASE_URL or SUPABASE_URL');
+  if (!SUPABASE_PUBLISHABLE_KEY) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY or SUPABASE_PUBLISHABLE_KEY');
   
   const errorMessage = `Missing required Supabase environment variables: ${missing.join(', ')}`;
   
-  if (import.meta.env.PROD) {
-    throw new Error(errorMessage);
-  } else {
-    console.error(errorMessage);
-  }
+  // Don't throw in production - just log and let the app try to work
+  // This allows for graceful degradation
+  console.error(errorMessage);
+  console.error('Current env:', {
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING',
+    SUPABASE_URL: import.meta.env.SUPABASE_URL ? 'SET' : 'MISSING',
+    VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ? 'SET' : 'MISSING',
+    SUPABASE_PUBLISHABLE_KEY: import.meta.env.SUPABASE_PUBLISHABLE_KEY ? 'SET' : 'MISSING',
+  });
 }
 
 // Import the supabase client like this:

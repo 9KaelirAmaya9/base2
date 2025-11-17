@@ -46,23 +46,52 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
           return;
         }
 
-        // Check role
-        const { data: roles, error: roleError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id);
+        // Check role - use RPC function if available, otherwise direct query
+        let userHasRole = false;
+        
+        try {
+          // First try direct query (works if RLS allows)
+          const { data: roles, error: roleError } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id);
 
-        if (!mounted) return;
+          if (!mounted) return;
 
-        if (roleError) {
-          console.error("Role check error:", roleError);
-          setHasRole(false);
-        } else {
-          const userHasRole = roles?.some(
-            (r) => r.role === requiredRole || (requiredRole === 'kitchen' && r.role === 'admin')
-          ) ?? false;
-          setHasRole(userHasRole);
+          if (!roleError && roles) {
+            userHasRole = roles.some(
+              (r) => r.role === requiredRole || (requiredRole === 'kitchen' && r.role === 'admin')
+            );
+          } else if (roleError) {
+            // If direct query fails, try RPC function as fallback
+            console.warn("Direct role query failed, trying RPC:", roleError);
+            try {
+              const { data: hasAdminRole } = await supabase.rpc('has_role', {
+                _user_id: session.user.id,
+                _role: requiredRole === 'kitchen' ? 'kitchen' : 'admin'
+              });
+              userHasRole = hasAdminRole || false;
+            } catch (rpcError) {
+              console.error("RPC role check also failed:", rpcError);
+              // Last resort: check if user is admin (admins can access kitchen)
+              if (requiredRole === 'kitchen') {
+                try {
+                  const { data: adminCheck } = await supabase.rpc('has_role', {
+                    _user_id: session.user.id,
+                    _role: 'admin'
+                  });
+                  userHasRole = adminCheck || false;
+                } catch (e) {
+                  console.error("Admin check failed:", e);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Role check exception:", e);
         }
+        
+        setHasRole(userHasRole);
       } catch (e) {
         console.error("Auth/Role check error:", e);
         if (mounted) {

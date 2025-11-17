@@ -143,7 +143,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [cart]);
 
   // Persist cart changes with debouncing
   useEffect(() => {

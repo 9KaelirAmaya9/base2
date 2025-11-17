@@ -3,6 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 import "@/utils/envValidation"; // Validate environment variables on startup
 import { initSentry, captureException, captureMessage } from "@/utils/sentry";
+import "@/utils/debugAuth"; // Make debugAuth available in console
 
 // Initialize Sentry error tracking
 initSentry().catch(console.error);
