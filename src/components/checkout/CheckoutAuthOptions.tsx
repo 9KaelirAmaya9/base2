@@ -207,7 +207,15 @@ export const CheckoutAuthOptions = ({ onContinueAsGuest, onAuthSuccess }: Checko
               Continue without creating an account. You'll still receive order updates via email.
             </p>
             <Button 
-              onClick={onContinueAsGuest} 
+              onClick={() => {
+                console.log("Continue as Guest button clicked");
+                console.log("onContinueAsGuest function:", typeof onContinueAsGuest);
+                try {
+                  onContinueAsGuest();
+                } catch (err) {
+                  console.error("Error calling onContinueAsGuest:", err);
+                }
+              }} 
               className="w-full"
               size="lg"
             >

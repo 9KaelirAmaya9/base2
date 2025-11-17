@@ -77,12 +77,21 @@ const Cart = () => {
   }, [searchParams, clearCart]);
 
   const handlePlaceOrder = async () => {
+    console.log("=== handlePlaceOrder CALLED ===");
+    console.log("Cart length:", cart.length);
+    console.log("Is processing:", isProcessing);
+    console.log("Customer info:", customerInfo);
+    
     if (cart.length === 0) {
+      console.error("Cart is empty!");
       toast.error(t("order.cartEmpty"));
       return;
     }
 
-    if (isProcessing) return;
+    if (isProcessing) {
+      console.warn("Already processing, ignoring duplicate call");
+      return;
+    }
 
     // Input validation schema - name, phone, and email are REQUIRED
     const orderSchema = z.object({
@@ -94,9 +103,11 @@ const Cart = () => {
     });
     
     // Validate customer information
+    console.log("Validating customer info:", customerInfo);
     const validation = orderSchema.safeParse(customerInfo);
     
     if (!validation.success) {
+      console.error("Validation failed:", validation.error.errors);
       const firstError = validation.error.errors[0];
       toast.error(firstError.message, {
         duration: 5000,
@@ -105,6 +116,8 @@ const Cart = () => {
       document.getElementById('name')?.focus();
       return;
     }
+    
+    console.log("Validation passed:", validation.data);
 
     if (orderType === "delivery" && !customerInfo.address.trim()) {
       toast.error("Please provide a delivery address");
@@ -113,27 +126,39 @@ const Cart = () => {
 
     // Validate delivery zone with geospatial accuracy
     if (orderType === "delivery") {
-      const deliveryValidation = await validateDeliveryAddress(customerInfo.address);
-      if (!deliveryValidation.isValid) {
-        // Show error with pickup suggestion if outside zone
-        if (deliveryValidation.suggestPickup) {
-          toast.error(deliveryValidation.message || "We apologize, but delivery isn't available to this location. Pickup is always available!", {
-            duration: 6000,
-            action: {
-              label: "Switch to Pickup",
-              onClick: () => setOrderType("pickup")
-            }
-          });
-        } else {
-          toast.error(deliveryValidation.message || "Invalid delivery address");
+      console.log("Validating delivery address:", customerInfo.address);
+      try {
+        const deliveryValidation = await validateDeliveryAddress(customerInfo.address);
+        console.log("Delivery validation result:", deliveryValidation);
+        if (!deliveryValidation.isValid) {
+          // Show error with pickup suggestion if outside zone
+          if (deliveryValidation.suggestPickup) {
+            toast.error(deliveryValidation.message || "We apologize, but delivery isn't available to this location. Pickup is always available!", {
+              duration: 6000,
+              action: {
+                label: "Switch to Pickup",
+                onClick: () => setOrderType("pickup")
+              }
+            });
+          } else {
+            toast.error(deliveryValidation.message || "Invalid delivery address");
+          }
+          return;
         }
-        return;
-      }
-      if (deliveryValidation.estimatedMinutes) {
-        toast.success(deliveryValidation.message || `Estimated delivery: ${deliveryValidation.estimatedMinutes} min`, {
-          duration: 4000
+        if (deliveryValidation.estimatedMinutes) {
+          toast.success(deliveryValidation.message || `Estimated delivery: ${deliveryValidation.estimatedMinutes} min`, {
+            duration: 4000
+          });
+        }
+      } catch (deliveryError) {
+        console.error("Delivery validation error:", deliveryError);
+        // Don't block checkout if delivery validation fails - just warn
+        toast.warning("Could not validate delivery address. Proceeding anyway...", {
+          duration: 3000
         });
       }
+    } else {
+      console.log("Pickup order - skipping delivery validation");
     }
 
     setIsProcessing(true);
