@@ -408,9 +408,9 @@ const Cart = () => {
                           onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                           placeholder="your@email.com (for order confirmation)"
                           required
-                          className={customerInfo.email.length > 0 && !customerInfo.email.includes('@') ? "border-destructive" : ""}
+                          className={customerInfo.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email.trim()) ? "border-destructive" : ""}
                         />
-                        {customerInfo.email.length > 0 && !customerInfo.email.includes('@') && (
+                        {customerInfo.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email.trim()) && (
                           <p className="text-xs text-destructive mt-1">Please enter a valid email address</p>
                         )}
                       </div>
@@ -560,7 +560,8 @@ const Cart = () => {
                               document.getElementById('phone')?.focus();
                               return;
                             }
-                            if (!customerInfo.email.trim() || !customerInfo.email.includes('@')) {
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!customerInfo.email.trim() || !emailRegex.test(customerInfo.email.trim())) {
                               toast.error("Please enter a valid email address");
                               document.getElementById('email')?.focus();
                               return;
