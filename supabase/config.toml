@@ -1,19 +1,21 @@
 project_id = "kivdqjyvahabsgqtszie"
 
 [functions.send-order-notification]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-checkout-session]
-verify_jwt = false
+verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+# Webhook must remain false - called by Stripe with signature verification
 
 [functions.create-payment-intent]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-embedded-checkout]
-verify_jwt = false
+verify_jwt = true
 
 [functions.validate-delivery-address]
 verify_jwt = false
+# Public function - no auth required for address validation

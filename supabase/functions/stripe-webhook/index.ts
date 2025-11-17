@@ -60,7 +60,7 @@ serve(async (req) => {
           .single();
 
         if (order) {
-          // Send notification to kitchen
+          // Send notification to kitchen (internal call - no auth needed)
           try {
             await supabase.functions.invoke('send-order-notification', {
               body: {
@@ -71,6 +71,9 @@ serve(async (req) => {
                 orderType: order.order_type,
                 total: order.total,
                 items: order.items,
+              },
+              headers: {
+                'x-internal-call': 'true'
               }
             });
             console.log('Notification sent for order:', orderNumber);
@@ -106,7 +109,7 @@ serve(async (req) => {
         .single();
 
       if (order) {
-        // Send notification
+        // Send notification (internal call - no auth needed)
         try {
           await supabase.functions.invoke('send-order-notification', {
             body: {
@@ -117,6 +120,9 @@ serve(async (req) => {
               orderType: order.order_type,
               total: order.total,
               items: order.items,
+            },
+            headers: {
+              'x-internal-call': 'true'
             }
           });
           console.log('Notification sent for order:', orderNumber);

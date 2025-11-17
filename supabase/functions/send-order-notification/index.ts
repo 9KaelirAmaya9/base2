@@ -21,6 +21,34 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify JWT token - allow internal calls (from webhook) or authenticated users
+    const authHeader = req.headers.get("Authorization");
+    const isInternalCall = req.headers.get("x-internal-call") === "true";
+    
+    // If called internally (from webhook), skip auth check
+    if (!isInternalCall) {
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: "Missing authorization header" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
+
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
+    }
+
     const { orderNumber, customerName, customerEmail, customerPhone, orderType, total, items }: OrderNotification = await req.json();
     
     console.log(`Processing notification for order ${orderNumber}`);
