@@ -83,9 +83,9 @@ const Cart = () => {
 
     // Input validation schema
     const orderSchema = z.object({
-      name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name is too long"),
-      phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(20, "Phone number is too long"),
-      email: z.string().trim().email("Invalid email format").max(255, "Email is too long"),
+      name: z.string().trim().max(100, "Name is too long").optional().or(z.literal("")),
+      phone: z.string().trim().max(20, "Phone number is too long").optional().or(z.literal("")),
+      email: z.string().trim().max(255, "Email is too long").optional().or(z.literal("")),
       address: z.string().trim().max(500, "Address is too long").optional().or(z.literal("")),
       notes: z.string().trim().max(1000, "Notes are too long").optional().or(z.literal("")),
     });

@@ -38,21 +38,23 @@ serve(async (req) => {
 
     const { items, orderType, customerInfo, orderNumber } = await req.json();
 
-    // Validate request data to prevent abuse
+    // Validate input parameters (allows guest checkout)
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('No items provided');
     }
-
-    if (!customerInfo || !customerInfo.name || !customerInfo.phone || !customerInfo.email) {
-      throw new Error("Missing required customer information");
-    }
-
     if (!orderNumber || typeof orderNumber !== 'string') {
-      throw new Error("Invalid order number");
+      throw new Error("Valid order number is required");
+    }
+    if (!orderType || !['pickup', 'delivery'].includes(orderType)) {
+      throw new Error("Valid order type (pickup/delivery) is required");
+    }
+    if (!customerInfo || !customerInfo.name || !customerInfo.phone || !customerInfo.email) {
+      throw new Error("Customer information is required (name, phone, email)");
     }
 
+    // Validate items structure and reasonable limits to prevent abuse
     if (items.length > 50) {
-      throw new Error("Too many items in order");
+      throw new Error("Too many items in order (max 50)");
     }
 
     for (const item of items) {
