@@ -38,12 +38,14 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
 
     const restaurantCoords: [number, number] = [-74.0060, 40.6501]; // 505 51st Street, Brooklyn
 
-    // Initialize map
+    // Initialize map with optimal settings to show restaurant and surrounding area
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: 'mapbox://styles/mapbox/streets-v12', // Detailed street map showing neighborhoods
       center: restaurantCoords,
-      zoom: 12,
+      zoom: 12, // Initial zoom - will be adjusted when zone loads
+      pitch: 0, // Flat view for better area visibility
+      bearing: 0, // North-up orientation
     });
 
     // Add navigation controls
@@ -155,6 +157,39 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
           },
         });
 
+        // Fit map to show the entire delivery zone plus surrounding area
+        try {
+          const bounds = new mapboxgl.LngLatBounds();
+          
+          // Add all coordinates from the isochrone polygon to bounds
+          data.features.forEach((feature: any) => {
+            if (feature.geometry && feature.geometry.coordinates) {
+              feature.geometry.coordinates.forEach((ring: any) => {
+                ring.forEach((coord: [number, number]) => {
+                  bounds.extend(coord);
+                });
+              });
+            }
+          });
+          
+          // Ensure restaurant is in bounds
+          bounds.extend(restaurantCoords);
+          
+          // Fit map to bounds with padding to show surrounding area
+          map.current.fitBounds(bounds, {
+            padding: { top: 50, bottom: 50, left: 50, right: 50 },
+            maxZoom: 14, // Don't zoom in too close - keep context
+            duration: 1000, // Smooth animation
+          });
+          
+          console.log('✅ Map fitted to show delivery zone and surrounding area');
+        } catch (boundsError) {
+          console.warn('Could not fit bounds, using default view:', boundsError);
+          // Fallback: ensure restaurant is visible
+          map.current.setCenter(restaurantCoords);
+          map.current.setZoom(12);
+        }
+
         console.log('✅ 15-minute delivery zone successfully displayed on map');
         setIsLoadingZone(false);
       } catch (error) {
@@ -198,6 +233,33 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
                   'line-dasharray': [2, 2],
                 },
               });
+              
+              // Fit map to show the entire delivery zone plus surrounding area
+              try {
+                const bounds = new mapboxgl.LngLatBounds();
+                
+                fallbackData.features.forEach((feature: any) => {
+                  if (feature.geometry && feature.geometry.coordinates) {
+                    feature.geometry.coordinates.forEach((ring: any) => {
+                      ring.forEach((coord: [number, number]) => {
+                        bounds.extend(coord);
+                      });
+                    });
+                  }
+                });
+                
+                bounds.extend(restaurantCoords);
+                
+                map.current.fitBounds(bounds, {
+                  padding: { top: 50, bottom: 50, left: 50, right: 50 },
+                  maxZoom: 14,
+                  duration: 1000,
+                });
+              } catch (boundsError) {
+                console.warn('Could not fit bounds for fallback:', boundsError);
+                map.current.setCenter(restaurantCoords);
+                map.current.setZoom(12);
+              }
               
               console.log('✅ Fallback isochrone loaded successfully');
               setIsLoadingZone(false);
