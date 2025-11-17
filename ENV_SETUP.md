@@ -31,7 +31,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_public_key
 
 **Where to find:**
 - Go to Project Settings → API
-- Copy "Project URL" → `VITE_SUPABASE_URL`
+- Copy "Project URL" → `VITE_lSUPABASE_URL`
 - Copy "anon public" key → `VITE_SUPABASE_PUBLISHABLE_KEY`
 
 ---
@@ -68,6 +68,33 @@ VITE_MAPBOX_PUBLIC_TOKEN=pk.eyJ1...
 ---
 
 ## Optional Variables
+
+### Resend (Recommended for Order Receipts)
+
+Get this from Resend after creating an account: https://resend.com
+
+```env
+RESEND_API_KEY=re_xxxxxxxxxxxxx
+```
+
+**Setup:**
+1. Sign up at https://resend.com (free tier: 3,000 emails/month)
+2. Go to API Keys section
+3. Create new API key
+4. Copy the key (starts with `re_...`)
+5. Add to environment variables
+
+**For Supabase Edge Functions:**
+- Go to Supabase Dashboard → Edge Functions → Secrets
+- Add `RESEND_API_KEY` with your key
+- This enables order confirmation emails
+
+**Note:** 
+- Orders work without this, but customers won't receive email receipts
+- Sign-in emails work automatically via Supabase (no Resend needed)
+- See [EMAIL_SETUP_GUIDE.md](./EMAIL_SETUP_GUIDE.md) for details
+
+---
 
 ### Sentry (Recommended for Error Tracking)
 
