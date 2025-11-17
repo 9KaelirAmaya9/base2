@@ -14,7 +14,18 @@ interface AddressSuggestion {
   coordinates: [number, number];
 }
 
-const DeliveryAddressValidator = () => {
+interface ValidatedAddress {
+  address: string;
+  coordinates?: [number, number];
+  isValid: boolean;
+  estimatedMinutes?: number;
+}
+
+interface DeliveryAddressValidatorProps {
+  onValidationComplete?: (result: ValidatedAddress) => void;
+}
+
+const DeliveryAddressValidator = ({ onValidationComplete }: DeliveryAddressValidatorProps) => {
   const { t } = useLanguage();
   const [address, setAddress] = useState('');
   const [validating, setValidating] = useState(false);
@@ -150,11 +161,22 @@ const DeliveryAddressValidator = () => {
     
     try {
       const validationResult = await validateDeliveryAddress(suggestion.address);
-      setResult({
+      const result = {
         isValid: validationResult.isValid,
         message: validationResult.message || '',
         estimatedMinutes: validationResult.estimatedMinutes,
-      });
+      };
+      setResult(result);
+      
+      // Notify parent component
+      if (onValidationComplete) {
+        onValidationComplete({
+          address: suggestion.address,
+          coordinates: suggestion.coordinates,
+          isValid: validationResult.isValid,
+          estimatedMinutes: validationResult.estimatedMinutes,
+        });
+      }
     } catch (error) {
       setResult({
         isValid: false,
@@ -173,11 +195,21 @@ const DeliveryAddressValidator = () => {
 
     try {
       const validationResult = await validateDeliveryAddress(address);
-      setResult({
+      const result = {
         isValid: validationResult.isValid,
         message: validationResult.message || '',
         estimatedMinutes: validationResult.estimatedMinutes,
-      });
+      };
+      setResult(result);
+      
+      // Notify parent component (without coordinates as we only have address)
+      if (onValidationComplete) {
+        onValidationComplete({
+          address: address,
+          isValid: validationResult.isValid,
+          estimatedMinutes: validationResult.estimatedMinutes,
+        });
+      }
     } catch (error) {
       setResult({
         isValid: false,

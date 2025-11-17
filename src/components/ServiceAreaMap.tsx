@@ -4,10 +4,22 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card } from '@/components/ui/card';
 import { MapPin } from 'lucide-react';
 
-const ServiceAreaMap = () => {
+interface ValidatedAddress {
+  address: string;
+  coordinates?: [number, number];
+  isValid: boolean;
+  estimatedMinutes?: number;
+}
+
+interface ServiceAreaMapProps {
+  validatedAddress?: ValidatedAddress | null;
+}
+
+const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>('');
+  const validatedMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   useEffect(() => {
     // Get Mapbox token from environment
@@ -111,6 +123,59 @@ const ServiceAreaMap = () => {
       map.current?.remove();
     };
   }, [mapboxToken]);
+
+  // Add validated address marker
+  useEffect(() => {
+    if (!map.current || !validatedAddress || !validatedAddress.coordinates) return;
+
+    // Remove previous validated marker
+    if (validatedMarkerRef.current) {
+      validatedMarkerRef.current.remove();
+    }
+
+    // Create marker with color based on validity
+    const color = validatedAddress.isValid ? '#22c55e' : '#f59e0b'; // green for valid, amber for invalid
+    
+    // Create popup content
+    const popupContent = document.createElement('div');
+    const statusText = document.createElement('p');
+    statusText.textContent = validatedAddress.isValid 
+      ? `✓ Delivery Available (${validatedAddress.estimatedMinutes} min)`
+      : '✗ Outside Delivery Zone';
+    statusText.style.margin = '0';
+    statusText.style.fontWeight = 'bold';
+    statusText.style.color = validatedAddress.isValid ? '#22c55e' : '#f59e0b';
+    
+    const addressText = document.createElement('p');
+    addressText.textContent = validatedAddress.address;
+    addressText.style.margin = '4px 0 0 0';
+    addressText.style.fontSize = '0.875rem';
+    
+    popupContent.appendChild(statusText);
+    popupContent.appendChild(addressText);
+
+    // Add new marker
+    validatedMarkerRef.current = new mapboxgl.Marker({ color })
+      .setLngLat(validatedAddress.coordinates)
+      .setPopup(
+        new mapboxgl.Popup({ offset: 25 })
+          .setDOMContent(popupContent)
+      )
+      .addTo(map.current);
+
+    // Fly to validated address
+    map.current.flyTo({
+      center: validatedAddress.coordinates,
+      zoom: 13,
+      duration: 1500,
+    });
+
+    return () => {
+      if (validatedMarkerRef.current) {
+        validatedMarkerRef.current.remove();
+      }
+    };
+  }, [validatedAddress]);
 
   if (!mapboxToken) {
     return (

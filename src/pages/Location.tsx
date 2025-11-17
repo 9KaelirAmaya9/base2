@@ -5,9 +5,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import logo from "@/assets/logo-illustration.png";
 import ServiceAreaMap from "@/components/ServiceAreaMap";
 import DeliveryAddressValidator from "@/components/DeliveryAddressValidator";
+import { useState } from "react";
+
+interface ValidatedAddress {
+  address: string;
+  coordinates?: [number, number];
+  isValid: boolean;
+  estimatedMinutes?: number;
+}
 
 const Location = () => {
   const { t } = useLanguage();
+  const [validatedAddress, setValidatedAddress] = useState<ValidatedAddress | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -81,13 +90,13 @@ const Location = () => {
 
             {/* Service Area Map */}
             <div>
-              <ServiceAreaMap />
+              <ServiceAreaMap validatedAddress={validatedAddress} />
             </div>
           </div>
 
           {/* Delivery Address Validator */}
           <div className="max-w-6xl mx-auto mb-16">
-            <DeliveryAddressValidator />
+            <DeliveryAddressValidator onValidationComplete={setValidatedAddress} />
           </div>
 
           {/* Services */}
