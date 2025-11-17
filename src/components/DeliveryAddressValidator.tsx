@@ -6,6 +6,8 @@ import { MapPin, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { validateDeliveryAddress } from '@/utils/deliveryValidation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface AddressSuggestion {
   address: string;
@@ -19,13 +21,24 @@ const DeliveryAddressValidator = () => {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
   const [result, setResult] = useState<{
     isValid: boolean;
     message: string;
     estimatedMinutes?: number;
   } | null>(null);
+
+  // Initialize Mapbox token
+  useEffect(() => {
+    const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+    if (token) {
+      mapboxgl.accessToken = token;
+    }
+  }, []);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -84,11 +97,72 @@ const DeliveryAddressValidator = () => {
     }, 300);
   };
 
-  // Handle suggestion selection
-  const handleSuggestionClick = (suggestion: AddressSuggestion) => {
+  // Handle map preview on hover
+  useEffect(() => {
+    if (hoveredIndex === null || !mapContainerRef.current || !suggestions[hoveredIndex]) {
+      // Cleanup map if no hover
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+      return;
+    }
+
+    const coords = suggestions[hoveredIndex].coordinates;
+    
+    // Create new map
+    if (mapContainerRef.current && !mapRef.current) {
+      mapRef.current = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: coords,
+        zoom: 14,
+        interactive: false,
+      });
+
+      // Add marker
+      new mapboxgl.Marker({ color: '#ef4444' })
+        .setLngLat(coords)
+        .addTo(mapRef.current);
+    } else if (mapRef.current) {
+      // Update existing map
+      mapRef.current.flyTo({ center: coords, zoom: 14 });
+    }
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [hoveredIndex, suggestions]);
+
+  // Handle suggestion selection with auto-validation
+  const handleSuggestionClick = async (suggestion: AddressSuggestion) => {
     setAddress(suggestion.address);
     setShowSuggestions(false);
     setSuggestions([]);
+    setHoveredIndex(null);
+    
+    // Auto-validate after selection
+    setValidating(true);
+    setResult(null);
+    
+    try {
+      const validationResult = await validateDeliveryAddress(suggestion.address);
+      setResult({
+        isValid: validationResult.isValid,
+        message: validationResult.message || '',
+        estimatedMinutes: validationResult.estimatedMinutes,
+      });
+    } catch (error) {
+      setResult({
+        isValid: false,
+        message: 'Unable to validate address. Please try again.',
+      });
+    } finally {
+      setValidating(false);
+    }
   };
 
   const handleValidate = async () => {
@@ -145,20 +219,34 @@ const DeliveryAddressValidator = () => {
             disabled={validating}
           />
           
-          {/* Autocomplete suggestions dropdown */}
+          {/* Autocomplete suggestions dropdown with map preview */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-start gap-2 border-b border-border last:border-b-0"
-                >
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{suggestion.address}</span>
-                </button>
-              ))}
+            <div className="absolute z-10 w-full mt-1 flex gap-2">
+              {/* Suggestions list */}
+              <div className="flex-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {suggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    onMouseEnter={() => setHoveredIndex(index)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                    className={`w-full px-4 py-3 text-left transition-colors flex items-start gap-2 border-b border-border last:border-b-0 ${
+                      hoveredIndex === index ? 'bg-muted' : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{suggestion.address}</span>
+                  </button>
+                ))}
+              </div>
+              
+              {/* Map preview - hidden on mobile, shown on larger screens */}
+              {hoveredIndex !== null && (
+                <div className="hidden lg:block w-64 h-60 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                  <div ref={mapContainerRef} className="w-full h-full" />
+                </div>
+              )}
             </div>
           )}
 
