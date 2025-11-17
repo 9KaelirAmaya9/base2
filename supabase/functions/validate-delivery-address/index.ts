@@ -25,10 +25,14 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log('🔄 validate-delivery-address: Request received');
+
   try {
     const { address }: DeliveryValidationRequest = await req.json();
+    console.log('📍 validate-delivery-address: Validating address:', address);
     
     if (!address || address.trim().length === 0) {
+      console.log('❌ validate-delivery-address: Empty address provided');
       return new Response(
         JSON.stringify({ 
           isValid: false, 
@@ -42,7 +46,7 @@ Deno.serve(async (req) => {
     const MAPBOX_TOKEN = Deno.env.get('MAPBOX_PUBLIC_TOKEN');
     
     if (!MAPBOX_TOKEN) {
-      console.error('MAPBOX_PUBLIC_TOKEN not configured');
+      console.error('❌ validate-delivery-address: MAPBOX_PUBLIC_TOKEN not configured');
       return new Response(
         JSON.stringify({ 
           isValid: false, 
@@ -53,14 +57,17 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log('🗺️  validate-delivery-address: Starting geocoding...');
+
     // Step 1: Geocode the address to get precise coordinates and ZIP code
     // Using proximity bias to improve accuracy for NYC addresses
     const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=US&proximity=${RESTAURANT_COORDINATES.longitude},${RESTAURANT_COORDINATES.latitude}&types=address&limit=1`;
     
+    console.log('🔍 validate-delivery-address: Calling Mapbox geocoding API...');
     const geocodeResponse = await fetch(geocodeUrl);
     
     if (!geocodeResponse.ok) {
-      console.error('Mapbox geocoding error:', geocodeResponse.statusText);
+      console.error('❌ validate-delivery-address: Mapbox geocoding error:', geocodeResponse.statusText);
       return new Response(
         JSON.stringify({ 
           isValid: false, 
@@ -72,8 +79,10 @@ Deno.serve(async (req) => {
     }
 
     const geocodeData = await geocodeResponse.json();
+    console.log('✅ validate-delivery-address: Geocoding successful, features:', geocodeData.features?.length || 0);
 
     if (!geocodeData.features || geocodeData.features.length === 0) {
+      console.log('❌ validate-delivery-address: No features found for address');
       return new Response(
         JSON.stringify({ 
           isValid: false, 
@@ -89,10 +98,13 @@ Deno.serve(async (req) => {
     const coordinates = feature.center; // [longitude, latitude]
     const [deliveryLongitude, deliveryLatitude] = coordinates;
 
+    console.log('📍 validate-delivery-address: Extracted coordinates:', { deliveryLongitude, deliveryLatitude, zipCode });
+
     // Validate coordinates are valid numbers
     if (!deliveryLongitude || !deliveryLatitude || 
         isNaN(deliveryLongitude) || isNaN(deliveryLatitude) ||
         Math.abs(deliveryLongitude) > 180 || Math.abs(deliveryLatitude) > 90) {
+      console.error('❌ validate-delivery-address: Invalid coordinates');
       return new Response(
         JSON.stringify({ 
           isValid: false, 
@@ -104,6 +116,7 @@ Deno.serve(async (req) => {
     }
 
     if (!zipCode) {
+      console.log('❌ validate-delivery-address: No ZIP code found');
       return new Response(
         JSON.stringify({ 
           isValid: false, 
@@ -115,6 +128,7 @@ Deno.serve(async (req) => {
     }
 
     // Step 2: Check if ZIP code is in pre-approved delivery zones
+    console.log('🗄️  validate-delivery-address: Checking delivery zones DB...');
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!

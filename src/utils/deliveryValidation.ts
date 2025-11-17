@@ -10,13 +10,22 @@ export interface DeliveryValidationResult {
 
 export const validateDeliveryAddress = async (address: string): Promise<DeliveryValidationResult> => {
   try {
-    // Use edge function for real-time validation with Mapbox
-    const { data, error } = await supabase.functions.invoke('validate-delivery-address', {
+    console.log("🚀 Starting delivery validation for:", address);
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Validation timeout')), 30000); // 30 second timeout
+    });
+
+    // Race between the actual call and the timeout
+    const validationPromise = supabase.functions.invoke('validate-delivery-address', {
       body: { address }
     });
 
+    const { data, error } = await Promise.race([validationPromise, timeoutPromise]) as any;
+
     if (error) {
-      console.error("Delivery validation error:", error);
+      console.error("❌ Delivery validation error:", error);
       return {
         isValid: false,
         message: "We apologize, but we couldn't validate your address. Pickup is always available!",
@@ -24,9 +33,10 @@ export const validateDeliveryAddress = async (address: string): Promise<Delivery
       };
     }
 
+    console.log("✅ Validation successful:", data);
     return data as DeliveryValidationResult;
   } catch (error) {
-    console.error("Delivery validation error:", error);
+    console.error("❌ Delivery validation exception:", error);
     return {
       isValid: false,
       message: "We apologize, but we couldn't validate your address. Pickup is always available!",
