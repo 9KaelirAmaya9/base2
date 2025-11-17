@@ -23,15 +23,20 @@ interface ValidatedAddress {
 
 interface DeliveryAddressValidatorProps {
   onValidationComplete?: (result: ValidatedAddress) => void;
+  debounceDelay?: number; // Debounce delay in milliseconds (default: 300)
 }
 
-const DeliveryAddressValidator = ({ onValidationComplete }: DeliveryAddressValidatorProps) => {
+const DeliveryAddressValidator = ({ 
+  onValidationComplete,
+  debounceDelay = 300 
+}: DeliveryAddressValidatorProps) => {
   const { t } = useLanguage();
   const [address, setAddress] = useState('');
   const [validating, setValidating] = useState(false);
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [autocompleteError, setAutocompleteError] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -68,10 +73,12 @@ const DeliveryAddressValidator = ({ onValidationComplete }: DeliveryAddressValid
     if (query.trim().length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
+      setAutocompleteError(null);
       return;
     }
 
     setLoadingSuggestions(true);
+    setAutocompleteError(null);
     try {
       const { data, error } = await supabase.functions.invoke('geocode-autocomplete', {
         body: { query },
@@ -79,14 +86,18 @@ const DeliveryAddressValidator = ({ onValidationComplete }: DeliveryAddressValid
 
       if (error) {
         console.error('Autocomplete error:', error);
+        setAutocompleteError('Unable to load address suggestions. Please type your full address.');
         setSuggestions([]);
+        setShowSuggestions(false);
       } else {
         setSuggestions(data?.suggestions || []);
         setShowSuggestions((data?.suggestions || []).length > 0);
       }
     } catch (error) {
       console.error('Autocomplete error:', error);
+      setAutocompleteError('Network error. Please check your connection and try again.');
       setSuggestions([]);
+      setShowSuggestions(false);
     } finally {
       setLoadingSuggestions(false);
     }
@@ -96,16 +107,17 @@ const DeliveryAddressValidator = ({ onValidationComplete }: DeliveryAddressValid
   const handleAddressChange = (value: string) => {
     setAddress(value);
     setResult(null);
+    setAutocompleteError(null);
 
     // Clear previous timeout
     if (suggestionTimeoutRef.current) {
       clearTimeout(suggestionTimeoutRef.current);
     }
 
-    // Set new timeout for fetching suggestions
+    // Set new timeout for fetching suggestions with configurable delay
     suggestionTimeoutRef.current = setTimeout(() => {
       fetchSuggestions(value);
-    }, 300);
+    }, debounceDelay);
   };
 
   // Handle map preview on hover
@@ -253,9 +265,9 @@ const DeliveryAddressValidator = ({ onValidationComplete }: DeliveryAddressValid
           
           {/* Autocomplete suggestions dropdown with map preview */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 flex gap-2">
+            <div className="absolute z-50 w-full mt-1 flex gap-2">
               {/* Suggestions list */}
-              <div className="flex-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="flex-1 bg-card border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto backdrop-blur-sm">
                 {suggestions.map((suggestion, index) => (
                   <button
                     key={index}
@@ -268,17 +280,27 @@ const DeliveryAddressValidator = ({ onValidationComplete }: DeliveryAddressValid
                     }`}
                   >
                     <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">{suggestion.address}</span>
+                    <span className="text-sm text-foreground">{suggestion.address}</span>
                   </button>
                 ))}
               </div>
               
               {/* Map preview - hidden on mobile, shown on larger screens */}
               {hoveredIndex !== null && (
-                <div className="hidden lg:block w-64 h-60 bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                <div className="hidden lg:block w-64 h-60 bg-card border border-border rounded-lg shadow-xl overflow-hidden backdrop-blur-sm">
                   <div ref={mapContainerRef} className="w-full h-full" />
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* Error message for autocomplete failures */}
+          {autocompleteError && !loadingSuggestions && (
+            <div className="absolute z-50 w-full mt-1 bg-destructive/10 border border-destructive/20 rounded-lg p-3 shadow-lg backdrop-blur-sm">
+              <p className="text-sm text-destructive flex items-start gap-2">
+                <XCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{autocompleteError}</span>
+              </p>
             </div>
           )}
 
