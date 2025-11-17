@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card } from '@/components/ui/card';
 import { MapPin } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ValidatedAddress {
   address: string;
@@ -25,12 +26,25 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
   const serviceAreaSourceRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Get Mapbox token from environment
-    const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
-    if (token) {
-      setMapboxToken(token);
-      mapboxgl.accessToken = token;
-    }
+    // Fetch Mapbox token from backend
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        
+        if (error) throw error;
+        
+        if (data?.token) {
+          setMapboxToken(data.token);
+          mapboxgl.accessToken = data.token;
+          console.log('✅ Mapbox token loaded successfully');
+        }
+      } catch (error) {
+        console.error('Error loading Mapbox token:', error);
+        setZoneError('Unable to load map configuration. Please refresh the page.');
+      }
+    };
+
+    fetchToken();
   }, []);
 
   useEffect(() => {

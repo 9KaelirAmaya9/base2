@@ -31,3 +31,7 @@ verify_jwt = false
 [functions.geocode-autocomplete]
 verify_jwt = false
 # Public function - no auth required for address autocomplete
+
+[functions.get-mapbox-token]
+verify_jwt = false
+# Public function - returns public Mapbox token for frontend use

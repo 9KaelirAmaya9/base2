@@ -50,10 +50,17 @@ const DeliveryAddressValidator = ({
 
   // Initialize Mapbox token
   useEffect(() => {
-    const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
-    if (token) {
-      mapboxgl.accessToken = token;
-    }
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (!error && data?.token) {
+          mapboxgl.accessToken = data.token;
+        }
+      } catch (error) {
+        console.error('Error loading Mapbox token:', error);
+      }
+    };
+    fetchToken();
   }, []);
 
   // Close suggestions when clicking outside
