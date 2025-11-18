@@ -76,10 +76,26 @@ const Cart = () => {
   }, [searchParams, clearCart]);
 
   const handlePlaceOrder = async () => {
-    console.log("=== handlePlaceOrder CALLED ===");
-    console.log("Cart length:", cart.length);
-    console.log("Is processing:", isProcessing);
-    console.log("Customer info:", customerInfo);
+    const processStartTime = Date.now();
+    const processStartTimestamp = new Date().toISOString();
+    
+    console.log("╔════════════════════════════════════════════════════════════════╗");
+    console.log("║          CHECKOUT PROCESS STARTED                              ║");
+    console.log("╚════════════════════════════════════════════════════════════════╝");
+    console.log("⏰ Start Timestamp:", processStartTimestamp);
+    console.log("📊 Initial State:", {
+      cartLength: cart.length,
+      isProcessing: isProcessing,
+      orderType: orderType,
+      hasAppliedCoupon: !!appliedCoupon,
+    });
+    console.log("👤 Customer Information:", {
+      name: customerInfo.name,
+      phone: customerInfo.phone,
+      email: customerInfo.email,
+      hasAddress: !!customerInfo.address,
+      hasNotes: !!customerInfo.notes,
+    });
     
     if (cart.length === 0) {
       console.error("Cart is empty!");
@@ -176,58 +192,85 @@ const Cart = () => {
     const overallStartTime = Date.now();
 
     try {
-      console.log("=== STEP 1: Calculating totals ===");
+      console.log("\n┌─────────────────────────────────────────────────────────────┐");
+      console.log("│ STEP 1: CALCULATING TOTALS                                  │");
+      console.log("└─────────────────────────────────────────────────────────────┘");
+      const step1Start = Date.now();
+      
       const subtotal = cartTotal;
       const discountAmount = appliedCoupon?.discount_amount || 0;
       const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
       const tax = subtotalAfterDiscount * 0.08875; // NYC sales tax: 8.875%
       const deliveryFee = orderType === "delivery" ? 5.00 : 0; // $5 delivery fee
       const total = subtotalAfterDiscount + tax + deliveryFee;
-      console.log(`Totals calculated in ${Date.now() - overallStartTime}ms`);
+      
+      console.log("💰 Calculated Totals:", {
+        subtotal: `$${subtotal.toFixed(2)}`,
+        discount: `$${discountAmount.toFixed(2)}`,
+        subtotalAfterDiscount: `$${subtotalAfterDiscount.toFixed(2)}`,
+        tax: `$${tax.toFixed(2)}`,
+        deliveryFee: `$${deliveryFee.toFixed(2)}`,
+        total: `$${total.toFixed(2)}`,
+      });
+      console.log(`⏱️  Step 1 Duration: ${Date.now() - step1Start}ms`);
 
       // Get current user if authenticated
-console.log("=== STEP 2: Getting session (non-blocking) ===");
-const sessionStartTime = Date.now();
-let session: any = null;
-try {
-  const sessionResult = await Promise.race([
-    supabase.auth.getSession(),
-    new Promise((resolve) => setTimeout(() => resolve({ data: { session: null }, error: null }), 2000)),
-  ]) as any;
-  if (sessionResult?.error) {
-    console.warn("Session error (non-critical):", sessionResult.error);
-  }
-  session = sessionResult?.data?.session ?? null;
-} catch (e) {
-  console.warn("Session retrieval failed (non-critical):", e);
-} finally {
-  console.log(`Session step finished in ${Date.now() - sessionStartTime}ms`);
-}
+      console.log("\n┌─────────────────────────────────────────────────────────────┐");
+      console.log("│ STEP 2: GETTING SESSION (NON-BLOCKING)                     │");
+      console.log("└─────────────────────────────────────────────────────────────┘");
+      const sessionStartTime = Date.now();
+      let session: any = null;
+      try {
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((resolve) => setTimeout(() => resolve({ data: { session: null }, error: null }), 2000)),
+        ]) as any;
+        if (sessionResult?.error) {
+          console.warn("⚠️  Session error (non-critical):", sessionResult.error);
+        }
+        session = sessionResult?.data?.session ?? null;
+        console.log("🔐 Session Retrieved:", {
+          isAuthenticated: !!session,
+          userId: session?.user?.id || 'guest',
+          userEmail: session?.user?.email || 'none',
+        });
+      } catch (e) {
+        console.warn("⚠️  Session retrieval failed (non-critical):", e);
+      } finally {
+        console.log(`⏱️  Step 2 Duration: ${Date.now() - sessionStartTime}ms`);
+      }
       
       // Generate order number on client to avoid needing SELECT permissions
       const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
       
-      console.log("=== STEP 3: Creating order ===");
-      console.log("Creating order as:", session?.user?.id ? "authenticated" : "guest");
-      console.log("Order data:", {
-        order_number: orderNumber,
-        user_id: session?.user?.id || null,
-        customer_name: validation.data.name,
-        customer_email: validation.data.email,
-        customer_phone: validation.data.phone,
-        order_type: orderType,
-        items_count: cart.length,
+      console.log("\n┌─────────────────────────────────────────────────────────────┐");
+      console.log("│ STEP 3: CREATING ORDER                                      │");
+      console.log("└─────────────────────────────────────────────────────────────┘");
+      console.log("📝 Order Configuration:", {
+        orderNumber: orderNumber,
+        userType: session?.user?.id ? "authenticated" : "guest",
+        userId: session?.user?.id || null,
+        customerName: validation.data.name,
+        customerEmail: validation.data.email,
+        customerPhone: validation.data.phone,
+        orderType: orderType,
+        deliveryAddress: orderType === "delivery" ? validation.data.address : null,
+        itemsCount: cart.length,
+        subtotal: `$${subtotal.toFixed(2)}`,
+        tax: `$${tax.toFixed(2)}`,
+        total: `$${total.toFixed(2)}`,
+        hasNotes: !!validation.data.notes,
       });
       
       // Add timeout to order creation to prevent hanging
       // Database inserts are typically fast (0.5-2s), but we allow 10s for slow networks and connection issues
-      console.log("Inserting order into database...");
+      console.log("💾 Inserting order into database...");
       const orderStartTime = Date.now();
       
       // Add a heartbeat to track progress
       const orderHeartbeat = setInterval(() => {
         const elapsed = Date.now() - orderStartTime;
-        console.log(`Order creation in progress... (${elapsed}ms elapsed)`);
+        console.log(`⏳ Order creation in progress... (${elapsed}ms elapsed)`);
       }, 2000);
       const orderInsertPromise = supabase
         .from("orders")
@@ -264,17 +307,28 @@ try {
       
       if (orderError) {
         const elapsed = Date.now() - orderStartTime;
-        console.error("Order creation error:", orderError);
-        console.error(`Order creation took ${elapsed}ms before failing`);
+        console.error("❌ Order creation error:", {
+          error: orderError,
+          message: orderError.message,
+          code: orderError.code,
+          elapsed: `${elapsed}ms`,
+        });
         throw new Error(`Failed to create order: ${orderError.message || JSON.stringify(orderError)}`);
       }
       
       const orderElapsed = Date.now() - orderStartTime;
-      console.log(`✅ Order created successfully in ${orderElapsed}ms:`, orderNumber);
-      console.log(`Total time so far: ${Date.now() - overallStartTime}ms`);
+      console.log(`✅ Order created successfully!`);
+      console.log("📦 Order Details:", {
+        orderNumber: orderNumber,
+        creationTime: `${orderElapsed}ms`,
+        status: "pending",
+      });
+      console.log(`⏱️  Step 3 Duration: ${orderElapsed}ms`);
+      console.log(`⏱️  Total elapsed: ${Date.now() - overallStartTime}ms`);
 
       // Send push notification to kitchen staff and admins (non-blocking)
       // Only send if user is authenticated (notification function requires auth)
+      console.log("\n📲 Sending push notification...");
       if (session?.user?.id) {
         try {
           await supabase.functions.invoke('send-push-notification', {
@@ -289,12 +343,13 @@ try {
               targetRoles: ['admin', 'kitchen']
             }
           });
+          console.log("✅ Push notification sent successfully");
         } catch (notifError) {
-          console.warn('Failed to send push notification (non-critical):', notifError);
+          console.warn('⚠️  Failed to send push notification (non-critical):', notifError);
           // Don't fail the order if notification fails
         }
       } else {
-        console.log("Skipping push notification for guest order");
+        console.log("ℹ️  Skipping push notification for guest order");
       }
 
       // Create PaymentIntent for secure modal checkout
@@ -305,12 +360,27 @@ try {
         quantity: item.quantity,
       }));
 
-      console.log("=== STEP 4: Creating payment intent ===");
-      console.log("Creating payment intent for order:", orderNumber);
-      console.log("Payment items:", paymentItems);
+      console.log("\n┌─────────────────────────────────────────────────────────────┐");
+      console.log("│ STEP 4: CREATING PAYMENT INTENT                             │");
+      console.log("└─────────────────────────────────────────────────────────────┘");
+      console.log("💳 Payment Configuration:", {
+        orderNumber: orderNumber,
+        itemsCount: paymentItems.length,
+        orderType: orderType,
+        totalAmount: `$${total.toFixed(2)}`,
+        hasCoupon: !!appliedCoupon,
+        discountAmount: `$${discountAmount.toFixed(2)}`,
+      });
+      console.log("📋 Payment Items:", paymentItems.map(item => ({
+        name: item.name,
+        price: `$${item.price.toFixed(2)}`,
+        quantity: item.quantity,
+        subtotal: `$${(item.price * item.quantity).toFixed(2)}`,
+      })));
       
       // Add timeout to payment intent creation to prevent hanging
       // Stripe API + edge function typically takes 1-4s, but we allow 15s for cold starts, slow networks, and Stripe API delays
+      console.log("🔄 Invoking payment intent creation...");
       const paymentStartTime = Date.now();
       const paymentIntentPromise = supabase.functions.invoke(
         'create-payment-intent',
@@ -329,7 +399,7 @@ try {
       // Add a heartbeat to track progress
       const paymentHeartbeat = setInterval(() => {
         const elapsed = Date.now() - paymentStartTime;
-        console.log(`Payment intent creation in progress... (${elapsed}ms elapsed)`);
+        console.log(`⏳ Payment intent creation in progress... (${elapsed}ms elapsed)`);
       }, 2000);
 
       const paymentTimeoutPromise = new Promise((_, reject) => 
@@ -349,12 +419,12 @@ try {
       
       if (piError) {
         const elapsed = Date.now() - paymentStartTime;
-        console.error("Payment intent error details:", {
+        console.error("❌ Payment intent error:", {
           error: piError,
           message: piError.message,
-          error_code: piError.error,
-          elapsed_ms: elapsed,
-          full_error: JSON.stringify(piError, null, 2)
+          errorCode: piError.error,
+          elapsed: `${elapsed}ms`,
+          fullError: JSON.stringify(piError, null, 2)
         });
         // Show the actual error message if available
         const errorMessage = piError.message || piError.error || "Failed to create payment intent";
@@ -362,15 +432,31 @@ try {
       }
 
       const paymentElapsed = Date.now() - paymentStartTime;
-      console.log(`✅ Payment intent created in ${paymentElapsed}ms:`, {
+      console.log(`✅ Payment intent created successfully!`);
+      console.log("🔑 Payment Intent Data:", {
         hasClientSecret: !!piData?.clientSecret,
         hasPublishableKey: !!piData?.publishableKey,
-        data: piData
+        clientSecretPrefix: piData?.clientSecret ? piData.clientSecret.substring(0, 15) + "..." : "none",
       });
-      console.log(`Total checkout time: ${Date.now() - overallStartTime}ms`);
+      console.log(`⏱️  Step 4 Duration: ${paymentElapsed}ms`);
 
       if (piData?.clientSecret && piData?.publishableKey) {
-        console.log("Opening payment modal for order:", orderNumber);
+        const totalProcessTime = Date.now() - overallStartTime;
+        const processEndTimestamp = new Date().toISOString();
+        
+        console.log("\n╔════════════════════════════════════════════════════════════════╗");
+        console.log("║       CHECKOUT PROCESS COMPLETED SUCCESSFULLY                  ║");
+        console.log("╚════════════════════════════════════════════════════════════════╝");
+        console.log("⏰ End Timestamp:", processEndTimestamp);
+        console.log("⏱️  TOTAL RUNTIME:", `${totalProcessTime}ms (${(totalProcessTime / 1000).toFixed(2)}s)`);
+        console.log("\n📊 Performance Summary:");
+        console.log("├─ Step 1 (Totals):         ~instant");
+        console.log("├─ Step 2 (Session):        " + (Date.now() - sessionStartTime) + "ms");
+        console.log("├─ Step 3 (Order Creation): " + orderElapsed + "ms");
+        console.log("└─ Step 4 (Payment Intent): " + paymentElapsed + "ms");
+        console.log("\n🎯 Next Action: Opening payment modal for order:", orderNumber);
+        console.log("═══════════════════════════════════════════════════════════════════\n");
+        
         setCurrentOrderNumber(orderNumber);
         setCheckoutClientSecret(piData.clientSecret as string);
         setCheckoutPublishableKey(piData.publishableKey as string);
@@ -378,19 +464,28 @@ try {
         setIsProcessing(false);
         return;
       } else {
-        console.error("Payment intent response missing data:", piData);
+        console.error("❌ Payment intent response missing data:", piData);
         throw new Error('Payment service returned invalid data. Please try again.');
       }
 
 
     } catch (error: any) {
-      console.error("=== CHECKOUT ERROR ===");
-      console.error("Error type:", typeof error);
-      console.error("Error object:", error);
-      console.error("Error message:", error?.message);
-      console.error("Error stack:", error?.stack);
-      console.error("Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-      console.error("=====================");
+      const totalProcessTime = Date.now() - overallStartTime;
+      const processEndTimestamp = new Date().toISOString();
+      
+      console.error("\n╔════════════════════════════════════════════════════════════════╗");
+      console.error("║             CHECKOUT PROCESS FAILED                            ║");
+      console.error("╚════════════════════════════════════════════════════════════════╝");
+      console.error("⏰ End Timestamp:", processEndTimestamp);
+      console.error("⏱️  TOTAL RUNTIME:", `${totalProcessTime}ms (${(totalProcessTime / 1000).toFixed(2)}s)`);
+      console.error("\n❌ Error Details:");
+      console.error("├─ Type:", typeof error);
+      console.error("├─ Name:", error?.name);
+      console.error("├─ Message:", error?.message);
+      console.error("├─ Code:", error?.code);
+      console.error("└─ Stack:", error?.stack);
+      console.error("\n📋 Full Error Object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      console.error("═══════════════════════════════════════════════════════════════════\n");
       
       // Show the actual error message to help debug
       let errorMessage = "Failed to process order. Please try again.";
@@ -420,7 +515,10 @@ try {
       });
     } finally {
       // Always reset processing state, even if there was an error
-      console.log("Resetting processing state");
+      const finalProcessTime = Date.now() - overallStartTime;
+      console.log("\n🔄 Cleanup Phase:");
+      console.log("├─ Resetting processing state");
+      console.log("└─ Final processing time: " + finalProcessTime + "ms");
       setIsProcessing(false);
     }
   };
