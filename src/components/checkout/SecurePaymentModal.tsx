@@ -50,6 +50,22 @@ function PaymentForm({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Add timeout for PaymentElement loading
+  useEffect(() => {
+    console.log('PaymentForm mounted, waiting for PaymentElement to load...');
+    const timer = setTimeout(() => {
+      if (!isReady) {
+        console.error('PaymentElement failed to load within 15 seconds');
+        setLoadingTimeout(true);
+        setErrorMessage('Payment form is taking too long to load. Please check your internet connection and try again.');
+        toast.error('Payment form timed out. Please refresh and try again.');
+      }
+    }, 15000); // 15 second timeout
+
+    return () => clearTimeout(timer);
+  }, [isReady]);
 
   // Detect PaymentElement load errors (e.g., account/key mismatch)
   useEffect(() => {
@@ -58,6 +74,7 @@ function PaymentForm({
     if (!paymentElement) return;
 
     const handleLoadError = (event: any) => {
+      console.error('PaymentElement load error:', event);
       const msg = event?.error?.message || 'Payment form failed to load. Please try again or contact support.';
       setErrorMessage(msg);
       toast.error(msg);
@@ -228,16 +245,31 @@ function PaymentForm({
                 googlePay: 'auto',
               }
             }}
-            onReady={() => setIsReady(true)}
+            onReady={() => {
+              console.log('✅ PaymentElement loaded successfully');
+              setIsReady(true);
+            }}
+            onLoadError={(error: any) => {
+              console.error('❌ PaymentElement failed to load:', error);
+              setErrorMessage(error?.error?.message || 'Failed to load payment form');
+              toast.error('Payment form failed to load. Please try again.');
+            }}
           />
         </div>
       </div>
 
       {/* Error Message */}
-      {errorMessage && (
+      {(errorMessage || loadingTimeout) && (
         <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-sm">
           <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-          <p className="text-destructive">{errorMessage}</p>
+          <div className="flex-1">
+            <p className="text-destructive font-medium mb-1">
+              {loadingTimeout ? 'Payment Form Timeout' : 'Payment Error'}
+            </p>
+            <p className="text-destructive text-xs">
+              {errorMessage || 'The payment form is taking too long to load. Please refresh the page and try again.'}
+            </p>
+          </div>
         </div>
       )}
 
@@ -246,16 +278,29 @@ function PaymentForm({
         type="submit"
         className="w-full" 
         size="lg"
-        disabled={!stripe || !elements || !isReady || isProcessing}
+        disabled={!stripe || !elements || !isReady || isProcessing || loadingTimeout}
       >
         {isProcessing ? (
           'Processing Payment...'
+        ) : loadingTimeout ? (
+          'Payment Form Failed'
         ) : !isReady ? (
           'Loading Payment Form...'
         ) : (
           `Pay $${total.toFixed(2)}`
         )}
       </Button>
+      
+      {loadingTimeout && (
+        <Button 
+          variant="outline"
+          className="w-full" 
+          size="lg"
+          onClick={() => window.location.reload()}
+        >
+          Refresh Page & Try Again
+        </Button>
+      )}
 
       <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
         <Lock className="h-3 w-3" />
@@ -281,16 +326,21 @@ export default function SecurePaymentModal({
 
   useEffect(() => {
     let mounted = true;
+    console.log('Initializing Stripe with publishable key:', publishableKey?.substring(0, 20) + '...');
     (async () => {
       try {
         const inst = await loadStripe(publishableKey);
         if (mounted) {
           setStripeInstance(inst);
           if (!inst) {
+            console.error('Stripe instance is null - key may be invalid');
             toast.error('Stripe initialization failed. Please verify your publishable key.');
+          } else {
+            console.log('✅ Stripe initialized successfully');
           }
         }
       } catch (e: any) {
+        console.error('Stripe initialization error:', e);
         if (mounted) {
           setStripeInstance(null);
           toast.error(e?.message || 'Failed to initialize payment.');
