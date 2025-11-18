@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import SecurePaymentModal from "@/components/checkout/SecurePaymentModal";
 import { CheckoutAuthOptions } from "@/components/checkout/CheckoutAuthOptions";
-import { validateDeliveryAddress } from "@/utils/deliveryValidation";
+import { validateDeliveryAddress, type DeliveryValidationResult } from "@/utils/deliveryValidation";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -128,16 +128,19 @@ const Cart = () => {
     if (orderType === "delivery") {
       console.log("Validating delivery address:", customerInfo.address);
       try {
-        // Set a timeout for delivery validation to prevent blocking
+        // Set a timeout for delivery validation to prevent blocking checkout
+        // Using 8 seconds to allow edge function time to complete geospatial calculations
         const validationPromise = validateDeliveryAddress(customerInfo.address);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Delivery validation timeout")), 5000)
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error("Delivery validation timeout")), 8000)
         );
         
-        const deliveryValidation = await Promise.race([validationPromise, timeoutPromise]) as any;
+        const deliveryValidation = await Promise.race([validationPromise, timeoutPromise]);
         console.log("Delivery validation result:", deliveryValidation);
         
-        if (!deliveryValidation.isValid) {
+        // Only block checkout if validation explicitly says address is invalid
+        // If validation times out or fails, we'll proceed with a warning
+        if (deliveryValidation && !deliveryValidation.isValid) {
           // Show error with pickup suggestion if outside zone
           if (deliveryValidation.suggestPickup) {
             toast.error(deliveryValidation.message || "We apologize, but delivery isn't available to this location. Pickup is always available!", {
@@ -153,20 +156,51 @@ const Cart = () => {
             return;
           }
         }
-        if (deliveryValidation.estimatedMinutes) {
-          toast.success(deliveryValidation.message || `Estimated delivery: ${deliveryValidation.estimatedMinutes} min`, {
-            duration: 4000
-          });
+        
+        // Show success message if validation passed
+        if (deliveryValidation && deliveryValidation.isValid) {
+          if (deliveryValidation.estimatedMinutes) {
+            toast.success(deliveryValidation.message || `Estimated delivery: ${deliveryValidation.estimatedMinutes} min`, {
+              duration: 4000
+            });
+          } else {
+            toast.success("Delivery address validated successfully", {
+              duration: 3000
+            });
+          }
         }
       } catch (deliveryError: any) {
-        console.error("Delivery validation error (non-blocking):", deliveryError);
+        console.error("❌ Delivery validation error (non-blocking):", deliveryError);
+        console.error("❌ Error type:", typeof deliveryError);
+        console.error("❌ Error message:", deliveryError?.message);
+        console.error("❌ Error stack:", deliveryError?.stack);
+        console.error("❌ Full error object:", JSON.stringify(deliveryError, null, 2));
+        
         // Don't block checkout if delivery validation fails or times out - just warn
-        if (deliveryError.message === "Delivery validation timeout") {
-          console.warn("Delivery validation timed out - proceeding anyway");
+        if (deliveryError?.message === "Delivery validation timeout" || deliveryError?.message?.includes("timeout")) {
+          console.warn("⏱️ Delivery validation timed out - proceeding with checkout");
+          toast.warning("Could not validate delivery address in time. Proceeding with checkout...", {
+            duration: 4000,
+            description: "If your address is outside our delivery zone, we'll contact you."
+          });
+        } else {
+          console.warn("⚠️ Delivery validation failed - proceeding with checkout");
+          const errorMsg = deliveryError?.message || "Unknown error";
+          console.warn("⚠️ Error details:", errorMsg);
+          
+          // Provide more specific error message if available
+          let userMessage = "Could not validate delivery address. Proceeding with checkout...";
+          if (errorMsg.includes("MAPBOX") || errorMsg.includes("token") || errorMsg.includes("Service temporarily unavailable")) {
+            userMessage = "Delivery validation service is temporarily unavailable. Proceeding with checkout...";
+          } else if (errorMsg.includes("network") || errorMsg.includes("fetch")) {
+            userMessage = "Network error during validation. Proceeding with checkout...";
+          }
+          
+          toast.warning(userMessage, {
+            duration: 4000,
+            description: "If your address is outside our delivery zone, we'll contact you."
+          });
         }
-        toast.warning("Could not validate delivery address. Proceeding anyway...", {
-          duration: 3000
-        });
         // Continue with checkout even if validation fails
       }
     } else {
@@ -228,46 +262,107 @@ try {
       // Add a heartbeat to track progress
       const orderHeartbeat = setInterval(() => {
         const elapsed = Date.now() - orderStartTime;
-        console.log(`Order creation in progress... (${elapsed}ms elapsed)`);
+        console.log(`⏳ Order creation in progress... (${elapsed}ms elapsed)`);
       }, 2000);
-      const orderInsertPromise = supabase
-        .from("orders")
-        .insert([{
-          order_number: orderNumber,
-          user_id: session?.user?.id || null,
-          customer_name: validation.data.name,
-          customer_email: validation.data.email || null,
-          customer_phone: validation.data.phone,
-          order_type: orderType,
-          delivery_address: orderType === "delivery" ? validation.data.address : null,
-          items: cart as any,
-          subtotal,
-          tax,
-          total: total, // Include delivery fee in total
-          notes: validation.data.notes || null,
-          status: "pending",
-        }], { returning: 'minimal' } as any);
+      
+      // Prepare order data
+      const orderDataToInsert = {
+        order_number: orderNumber,
+        user_id: session?.user?.id || null,
+        customer_name: validation.data.name,
+        customer_email: validation.data.email || null,
+        customer_phone: validation.data.phone,
+        order_type: orderType,
+        delivery_address: orderType === "delivery" ? validation.data.address : null,
+        items: cart as any,
+        subtotal,
+        tax,
+        total: total, // Include delivery fee in total
+        notes: validation.data.notes || null,
+        status: "pending",
+      };
+      
+      console.log("💾 Order data prepared:", {
+        order_number: orderDataToInsert.order_number,
+        items_count: cart.length,
+        total: orderDataToInsert.total,
+        order_type: orderDataToInsert.order_type
+      });
+      
+      // Create insert promise with explicit error handling
+      const orderInsertPromise = (async () => {
+        try {
+          console.log("🔄 Starting database insert...");
+          const result = await supabase
+            .from("orders")
+            .insert([orderDataToInsert])
+            .select('id')
+            .single();
+          
+          console.log("📦 Insert result:", {
+            hasData: !!result.data,
+            hasError: !!result.error,
+            error: result.error
+          });
+          
+          return result;
+        } catch (insertError: any) {
+          console.error("❌ Insert exception:", insertError);
+          return {
+            data: null,
+            error: {
+              message: insertError?.message || "Database insert failed",
+              details: insertError
+            }
+          };
+        }
+      })();
 
       const orderTimeoutPromise = new Promise((_, reject) => 
         setTimeout(() => {
           const elapsed = Date.now() - orderStartTime;
           clearInterval(orderHeartbeat);
-          reject(new Error(`Order creation timed out after 10 seconds (elapsed: ${elapsed}ms)`));
-        }, 10000)
+          reject(new Error(`Order creation timed out after 15 seconds (elapsed: ${elapsed}ms). The database may be slow or there may be a connection issue.`));
+        }, 15000) // Increased to 15 seconds
       );
 
-      const { data: orderData, error: orderError } = await Promise.race([
+      const result = await Promise.race([
         orderInsertPromise,
         orderTimeoutPromise
       ]) as any;
 
       clearInterval(orderHeartbeat);
       
+      // Extract data and error from result
+      const orderData = result?.data;
+      const orderError = result?.error;
+      
       if (orderError) {
         const elapsed = Date.now() - orderStartTime;
-        console.error("Order creation error:", orderError);
-        console.error(`Order creation took ${elapsed}ms before failing`);
-        throw new Error(`Failed to create order: ${orderError.message || JSON.stringify(orderError)}`);
+        console.error("❌ Order creation error:", orderError);
+        console.error("❌ Error type:", typeof orderError);
+        console.error("❌ Error message:", orderError?.message);
+        console.error("❌ Error code:", orderError?.code);
+        console.error("❌ Error details:", orderError?.details);
+        console.error("❌ Error hint:", orderError?.hint);
+        console.error(`❌ Order creation took ${elapsed}ms before failing`);
+        
+        // Provide more specific error message
+        let errorMessage = "Failed to create order. Please try again.";
+        
+        if (orderError?.code === '23505') {
+          errorMessage = "An order with this number already exists. Please try again.";
+        } else if (orderError?.code === '23503') {
+          errorMessage = "Invalid order data. Please check your information and try again.";
+        } else if (orderError?.code === '42501') {
+          errorMessage = "Permission denied. Please contact support.";
+        } else if (orderError?.message) {
+          errorMessage = `Failed to create order: ${orderError.message}`;
+        } else if (typeof orderError === 'string') {
+          errorMessage = `Failed to create order: ${orderError}`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const orderElapsed = Date.now() - orderStartTime;
@@ -778,14 +873,32 @@ try {
                           cartTotal={cartTotal}
                           cart={cart}
                           onSuccess={() => {
-                            clearCart();
-                            setCustomerInfo({ name: "", phone: "", email: "", address: "", notes: "" });
-                            setAppliedCoupon(null);
-                            setCouponCode("");
-                            setShowCheckout(false);
-                            setCheckoutClientSecret(null);
-                            setCheckoutPublishableKey(null);
-                            navigate(`/order-success?order_number=${currentOrderNumber}`);
+                            try {
+                              clearCart();
+                              setCustomerInfo({ name: "", phone: "", email: "", address: "", notes: "" });
+                              setAppliedCoupon(null);
+                              setCouponCode("");
+                              setShowCheckout(false);
+                              setCheckoutClientSecret(null);
+                              setCheckoutPublishableKey(null);
+                              
+                              // Navigate to success page with error handling
+                              if (currentOrderNumber) {
+                                navigate(`/order-success?order_number=${encodeURIComponent(currentOrderNumber)}`);
+                              } else {
+                                // Fallback if order number is missing
+                                console.warn('Order number missing, redirecting to success page without order number');
+                                navigate('/order-success');
+                              }
+                            } catch (error) {
+                              console.error('Error in onSuccess callback:', error);
+                              // Fallback navigation if navigate fails
+                              if (currentOrderNumber) {
+                                window.location.href = `/order-success?order_number=${encodeURIComponent(currentOrderNumber)}`;
+                              } else {
+                                window.location.href = '/order-success';
+                              }
+                            }
                           }}
                         />
                       )}

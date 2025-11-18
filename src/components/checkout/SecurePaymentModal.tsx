@@ -138,24 +138,31 @@ function PaymentForm({
         // Order status is already 'pending' - no need to update
         // The webhook will handle notifications when payment succeeds
 
-        // Send confirmation email
+        // Send confirmation email (with timeout to prevent blocking)
+        const emailPromise = supabase.functions.invoke('send-order-confirmation', {
+          body: {
+            orderNumber,
+            customerName: customerInfo.name,
+            customerEmail: customerInfo.email,
+            orderType,
+            items: cart,
+            subtotal: cartTotal,
+            tax: cartTotal * 0.08875,
+            total: total, // Use the actual total including delivery fee
+            deliveryAddress: orderType === 'delivery' ? customerInfo.address : undefined
+          }
+        });
+
+        // Add 5-second timeout to email confirmation
+        const emailTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Email confirmation timeout')), 5000)
+        );
+
         try {
-          await supabase.functions.invoke('send-order-confirmation', {
-            body: {
-              orderNumber,
-              customerName: customerInfo.name,
-              customerEmail: customerInfo.email,
-              orderType,
-              items: cart,
-              subtotal: cartTotal,
-              tax: cartTotal * 0.08875,
-              total: cartTotal * 1.08875,
-              deliveryAddress: orderType === 'delivery' ? customerInfo.address : undefined
-            }
-          });
-        } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError);
-          // Don't fail the transaction if email fails
+          await Promise.race([emailPromise, emailTimeout]);
+        } catch (emailError: any) {
+          console.error('Failed to send confirmation email (non-blocking):', emailError);
+          // Don't fail the transaction if email fails or times out
         }
         
         toast.success('Payment successful!');

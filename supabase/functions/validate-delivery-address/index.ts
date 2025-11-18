@@ -147,79 +147,91 @@ Deno.serve(async (req) => {
       // The 'driving-traffic' profile uses real-time traffic data
       const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${RESTAURANT_COORDINATES.longitude},${RESTAURANT_COORDINATES.latitude};${deliveryLongitude},${deliveryLatitude}?access_token=${MAPBOX_TOKEN}&geometries=geojson&overview=full&steps=false&alternatives=false`;
       
-      const directionsResponse = await fetch(directionsUrl);
+      let directionsData: any = null;
+      let drivingTimeMinutes: number | null = null;
+      let distanceMiles: number | null = null;
       
-      if (!directionsResponse.ok) {
-        console.error('Mapbox directions error:', directionsResponse.statusText);
-        // Fallback to regular driving (without traffic) if traffic API fails
-        const fallbackUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${RESTAURANT_COORDINATES.longitude},${RESTAURANT_COORDINATES.latitude};${deliveryLongitude},${deliveryLatitude}?access_token=${MAPBOX_TOKEN}&geometries=geojson`;
-        const fallbackResponse = await fetch(fallbackUrl);
-        const fallbackData = await fallbackResponse.json();
+      // Try traffic-aware routing first
+      try {
+        const directionsResponse = await fetch(directionsUrl);
         
-        if (fallbackData.routes && fallbackData.routes.length > 0) {
-          const drivingTimeMinutes = Math.ceil(fallbackData.routes[0].duration / 60);
-          
-          if (drivingTimeMinutes > MAX_DELIVERY_TIME_MINUTES) {
-            return new Response(
-              JSON.stringify({ 
-                isValid: false, 
-                message: `We apologize, but your location is outside our 15-minute delivery zone (estimated ${drivingTimeMinutes} minutes away). Pickup is always available and ready in 20-30 minutes!`,
-                suggestPickup: true,
-                estimatedMinutes: drivingTimeMinutes
-              }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
+        if (directionsResponse.ok) {
+          directionsData = await directionsResponse.json();
+          console.log('✅ Traffic-aware routing successful');
+        } else {
+          console.warn('⚠️ Traffic API failed, trying fallback:', directionsResponse.statusText);
         }
-      } else {
-        const directionsData = await directionsResponse.json();
-
-        if (directionsData.routes && directionsData.routes.length > 0) {
-          // Use the fastest route with current traffic conditions
-          const route = directionsData.routes[0];
-          const drivingTimeMinutes = Math.ceil(route.duration / 60); // Duration in seconds, convert to minutes
-          const distanceMiles = (route.distance / 1609.34).toFixed(1); // Distance in meters, convert to miles
+      } catch (trafficError) {
+        console.warn('⚠️ Traffic API error, trying fallback:', trafficError);
+      }
+      
+      // Fallback to regular driving (without traffic) if traffic API fails
+      if (!directionsData || !directionsData.routes || directionsData.routes.length === 0) {
+        try {
+          const fallbackUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${RESTAURANT_COORDINATES.longitude},${RESTAURANT_COORDINATES.latitude};${deliveryLongitude},${deliveryLatitude}?access_token=${MAPBOX_TOKEN}&geometries=geojson&overview=full&steps=false`;
+          const fallbackResponse = await fetch(fallbackUrl);
           
-          // Validate the route is reasonable (not too far)
-          if (drivingTimeMinutes > MAX_DELIVERY_TIME_MINUTES) {
-            return new Response(
-              JSON.stringify({ 
-                isValid: false, 
-                message: `We apologize, but your location is outside our 15-minute delivery zone (estimated ${drivingTimeMinutes} minutes away with current traffic). Pickup is always available and ready in 20-30 minutes!`,
-                suggestPickup: true,
-                estimatedMinutes: drivingTimeMinutes,
-                distanceMiles: parseFloat(distanceMiles)
-              }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
+          if (fallbackResponse.ok) {
+            directionsData = await fallbackResponse.json();
+            console.log('✅ Fallback routing successful');
+          } else {
+            console.error('❌ Fallback routing also failed:', fallbackResponse.statusText);
+            const errorData = await fallbackResponse.json().catch(() => ({}));
+            console.error('Error details:', errorData);
           }
-          
-          // If within range but not in DB, add it for future reference
-          try {
-            await supabase
-              .from('delivery_zones')
-              .upsert({ 
-                zip_code: zipCode, 
-                estimated_minutes: drivingTimeMinutes, 
-                is_active: true 
-              }, {
-                onConflict: 'zip_code'
-              });
-          } catch (dbError) {
-            console.error('Error saving delivery zone:', dbError);
-            // Don't fail validation if DB insert fails
-          }
-
+        } catch (fallbackError) {
+          console.error('❌ Fallback routing error:', fallbackError);
+        }
+      }
+      
+      // Process route data if available
+      if (directionsData && directionsData.routes && directionsData.routes.length > 0) {
+        const route = directionsData.routes[0];
+        drivingTimeMinutes = Math.ceil(route.duration / 60); // Duration in seconds, convert to minutes
+        distanceMiles = parseFloat((route.distance / 1609.34).toFixed(1)); // Distance in meters, convert to miles
+        
+        console.log(`📍 Calculated delivery time: ${drivingTimeMinutes} minutes, distance: ${distanceMiles} miles`);
+        
+        // Validate the route is reasonable (not too far)
+        if (drivingTimeMinutes > MAX_DELIVERY_TIME_MINUTES) {
           return new Response(
             JSON.stringify({ 
-              isValid: true, 
+              isValid: false, 
+              message: `We apologize, but your location is outside our 15-minute delivery zone (estimated ${drivingTimeMinutes} minutes away). Pickup is always available and ready in 20-30 minutes!`,
+              suggestPickup: true,
               estimatedMinutes: drivingTimeMinutes,
-              message: `Estimated delivery time: ${drivingTimeMinutes} minutes (with current traffic)`,
-              distanceMiles: parseFloat(distanceMiles)
+              distanceMiles: distanceMiles
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+        
+        // If within range but not in DB, add it for future reference
+        try {
+          await supabase
+            .from('delivery_zones')
+            .upsert({ 
+              zip_code: zipCode, 
+              estimated_minutes: drivingTimeMinutes, 
+              is_active: true 
+            }, {
+              onConflict: 'zip_code'
+            });
+          console.log('✅ Delivery zone saved to database');
+        } catch (dbError) {
+          console.error('⚠️ Error saving delivery zone (non-critical):', dbError);
+          // Don't fail validation if DB insert fails
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            isValid: true, 
+            estimatedMinutes: drivingTimeMinutes,
+            message: `Estimated delivery time: ${drivingTimeMinutes} minutes`,
+            distanceMiles: distanceMiles
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // If we can't calculate route, be conservative and suggest pickup
@@ -244,12 +256,30 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Delivery validation error:', error);
+    console.error('❌ Delivery validation error:', error);
+    console.error('❌ Error type:', typeof error);
+    console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Provide more specific error message
+    let errorMessage = 'We apologize, but we couldn\'t validate your address. Pickup is always available!';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('MAPBOX') || error.message.includes('token')) {
+        errorMessage = 'Service temporarily unavailable. Please try pickup instead.';
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        errorMessage = 'Network error during validation. Please try again or choose pickup.';
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+    }
+    
     return new Response(
       JSON.stringify({ 
         isValid: false, 
-        message: 'We apologize, but we couldn\'t validate your address. Pickup is always available!',
-        suggestPickup: true
+        message: errorMessage,
+        suggestPickup: true,
+        error: error instanceof Error ? error.message : String(error)
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
