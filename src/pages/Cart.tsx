@@ -14,7 +14,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import SecurePaymentModal from "@/components/checkout/SecurePaymentModal";
-import { CheckoutAuthOptions } from "@/components/checkout/CheckoutAuthOptions";
+
 import { validateDeliveryAddress } from "@/utils/deliveryValidation";
 
 const Cart = () => {
@@ -35,7 +35,6 @@ const Cart = () => {
   const [checkoutPublishableKey, setCheckoutPublishableKey] = useState<string | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [currentOrderNumber, setCurrentOrderNumber] = useState<string | null>(null);
-  const [showAuthOptions, setShowAuthOptions] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_amount: number; description?: string } | null>(null);
@@ -725,46 +724,40 @@ try {
                         </div>
                       </div>
 
-                      {!showAuthOptions ? (
-                        <Button 
-                          className="w-full" 
-                          size="lg"
-                          onClick={() => {
-                            // Quick validation before showing auth options
-                            if (!customerInfo.name.trim() || customerInfo.name.trim().length < 2) {
-                              toast.error("Please enter your name (at least 2 characters)");
-                              document.getElementById('name')?.focus();
-                              return;
-                            }
-                            if (!customerInfo.phone.trim() || customerInfo.phone.trim().length < 10) {
-                              toast.error("Please enter a valid phone number (at least 10 digits)");
-                              document.getElementById('phone')?.focus();
-                              return;
-                            }
-                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                            if (!customerInfo.email.trim() || !emailRegex.test(customerInfo.email.trim())) {
-                              toast.error("Please enter a valid email address");
-                              document.getElementById('email')?.focus();
-                              return;
-                            }
-                            if (orderType === "delivery" && !customerInfo.address.trim()) {
-                              toast.error("Please enter a delivery address");
-                              document.getElementById('address')?.focus();
-                              return;
-                            }
-                            setShowAuthOptions(true);
-                          }}
-                          disabled={cart.length === 0}
-                        >
-                          <CreditCard className="mr-2 h-4 w-4" />
-                          Proceed to Checkout
-                        </Button>
-                      ) : (
-                        <CheckoutAuthOptions
-                          onContinueAsGuest={handlePlaceOrder}
-                          onAuthSuccess={handlePlaceOrder}
-                        />
-                      )}
+                      <Button 
+                        className="w-full" 
+                        size="lg"
+                        onClick={() => {
+                          // Quick validation before checkout
+                          if (!customerInfo.name.trim() || customerInfo.name.trim().length < 2) {
+                            toast.error("Please enter your name (at least 2 characters)");
+                            document.getElementById('name')?.focus();
+                            return;
+                          }
+                          if (!customerInfo.phone.trim() || customerInfo.phone.trim().length < 10) {
+                            toast.error("Please enter a valid phone number (at least 10 digits)");
+                            document.getElementById('phone')?.focus();
+                            return;
+                          }
+                          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                          if (!customerInfo.email.trim() || !emailRegex.test(customerInfo.email.trim())) {
+                            toast.error("Please enter a valid email address");
+                            document.getElementById('email')?.focus();
+                            return;
+                          }
+                          if (orderType === "delivery" && !customerInfo.address.trim()) {
+                            toast.error("Please enter a delivery address");
+                            document.getElementById('address')?.focus();
+                            return;
+                          }
+                          // Proceed directly to checkout as guest
+                          handlePlaceOrder();
+                        }}
+                        disabled={cart.length === 0}
+                      >
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Proceed to Checkout
+                      </Button>
 
                       {checkoutClientSecret && checkoutPublishableKey && currentOrderNumber && (
                         <SecurePaymentModal
