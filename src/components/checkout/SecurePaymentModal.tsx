@@ -67,26 +67,6 @@ function PaymentForm({
     return () => clearTimeout(timer);
   }, [isReady]);
 
-  // Detect PaymentElement load errors (e.g., account/key mismatch)
-  useEffect(() => {
-    if (!elements) return;
-    const paymentElement = elements.getElement('payment');
-    if (!paymentElement) return;
-
-    const handleLoadError = (event: any) => {
-      console.error('PaymentElement load error:', event);
-      const msg = event?.error?.message || 'Payment form failed to load. Please try again or contact support.';
-      setErrorMessage(msg);
-      toast.error(msg);
-    };
-
-    // @ts-ignore - Stripe types: PaymentElement supports 'loaderror'
-    paymentElement.on('loaderror', handleLoadError);
-    return () => {
-      // @ts-ignore
-      paymentElement.off('loaderror', handleLoadError);
-    };
-  }, [elements]);
 
   const tax = cartTotal * 0.08875;
   const deliveryFee = orderType === 'delivery' ? 5.00 : 0;
@@ -94,31 +74,39 @@ function PaymentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔵 Payment form submitted');
     
     if (!stripe || !elements) {
+      console.error('❌ Stripe not initialized');
       toast.error('Payment system not ready. Please try again.');
       return;
     }
 
     if (!isReady) {
+      console.error('❌ Payment form not ready');
       toast.error('Please wait for the payment form to load.');
       return;
     }
 
+    console.log('🟡 Starting payment processing...');
     setIsProcessing(true);
     setErrorMessage(null);
 
     try {
       // Validate the payment element
+      console.log('🔵 Submitting payment details for validation...');
       const { error: submitError } = await elements.submit();
       if (submitError) {
+        console.error('❌ Payment validation failed:', submitError);
         setErrorMessage(submitError.message || 'Please check your payment details.');
         toast.error(submitError.message || 'Please check your payment details.');
         setIsProcessing(false);
         return;
       }
+      console.log('✅ Payment details validated');
 
       // Confirm the payment
+      console.log('🔵 Confirming payment with Stripe...');
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -128,18 +116,24 @@ function PaymentForm({
       });
 
       if (error) {
+        console.error('❌ Payment confirmation failed:', error);
         setErrorMessage(error.message || 'Payment failed. Please try again.');
         toast.error(error.message || 'Payment failed. Please try again.');
         setIsProcessing(false);
         return;
       }
 
-      if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
-        // Order status is already 'pending' - no need to update
-        // The webhook will handle notifications when payment succeeds
+      console.log('🟢 Payment intent result:', {
+        status: paymentIntent?.status,
+        id: paymentIntent?.id,
+      });
 
-        // Send confirmation email
+      if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing')) {
+        console.log('✅ Payment successful! Status:', paymentIntent.status);
+        
+        // Send confirmation email (non-blocking)
         try {
+          console.log('📧 Sending confirmation email...');
           await supabase.functions.invoke('send-order-confirmation', {
             body: {
               orderNumber,
@@ -153,19 +147,23 @@ function PaymentForm({
               deliveryAddress: orderType === 'delivery' ? customerInfo.address : undefined
             }
           });
+          console.log('✅ Confirmation email sent');
         } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError);
+          console.error('⚠️ Failed to send confirmation email (non-critical):', emailError);
           // Don't fail the transaction if email fails
         }
         
         toast.success('Payment successful!');
+        console.log('🎉 Calling onSuccess callback');
         onSuccess();
       } else {
+        console.error('❌ Unexpected payment status:', paymentIntent?.status);
         setErrorMessage('Payment status unclear. Please check your order status.');
         toast.warning('Payment status unclear. Please check your order status.');
         setIsProcessing(false);
       }
     } catch (err: any) {
+      console.error('❌ Payment error:', err);
       const message = err?.message || 'An unexpected error occurred.';
       setErrorMessage(message);
       toast.error(message);
