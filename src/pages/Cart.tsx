@@ -381,7 +381,6 @@ const Cart = () => {
       
       if (orderError) {
         const elapsed = Date.now() - orderStartTime;
-<<<<<<< HEAD
         console.error("❌ Order creation error:", orderError);
         console.error("❌ Error type:", typeof orderError);
         console.error("❌ Error message:", orderError?.message);
