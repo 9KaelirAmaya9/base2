@@ -278,7 +278,20 @@ const DeliveryAddressValidator = ({
 
   return (
     <div className="space-y-4">
-      <Card className="p-6 space-y-4 bg-card/95 backdrop-blur-sm border-primary/20">
+      <Card className="p-6 space-y-4 bg-card/95 backdrop-blur-sm border-primary/20 shadow-lg">
+        {/* Header Section */}
+        <div className="text-center space-y-2 pb-4 border-b border-border">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <MapPin className="h-6 w-6 text-primary" />
+            <h3 className="font-serif text-2xl font-semibold text-foreground">
+              {t('location.checkDelivery') || 'Check Delivery Eligibility'}
+            </h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {t('location.checkDeliverySubtext') || 'Enter your address to see if we deliver to your area (20-minute delivery zone)'}
+          </p>
+        </div>
+
         <div className="space-y-2" ref={wrapperRef}>
           <label htmlFor="delivery-address" className="text-sm font-medium text-foreground">
             {t('deliveryAddress') || 'Delivery Address'}
@@ -386,7 +399,7 @@ const DeliveryAddressValidator = ({
                   ) : (
                     <>
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      Yes, Check Availability
+                      Yes, Verify Delivery Area
                     </>
                   )}
                 </Button>
@@ -414,7 +427,10 @@ const DeliveryAddressValidator = ({
                 {t('validating') || 'Validating...'}
               </>
             ) : (
-              t('checkDelivery') || 'Check Delivery Availability'
+              <>
+                <MapPin className="h-4 w-4 mr-2" />
+                {t('verifyDeliveryArea') || 'Verify Delivery Area'}
+              </>
             )}
           </Button>
         )}
@@ -458,7 +474,7 @@ const DeliveryAddressValidator = ({
                       🚗 Estimated delivery: {result.estimatedMinutes} minutes
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-                      Within our 15-minute delivery zone
+                      Within our 20-minute delivery zone
                     </p>
                   </div>
                 )}

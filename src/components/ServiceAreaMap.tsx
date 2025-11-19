@@ -96,7 +96,7 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
       )
       .addTo(map.current);
 
-    // Fetch and display 15-minute isochrone (service area)
+    // Fetch and display 20-minute isochrone (service area)
     const loadServiceArea = async () => {
       // Prevent double execution
       if (loadServiceAreaCalledRef.current || !map.current || !mapboxToken) {
@@ -108,10 +108,10 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
       setZoneError(null);
       
       try {
-        // Use driving profile with traffic for accurate 15-minute zone
-        const isochroneUrl = `https://api.mapbox.com/isochrone/v1/mapbox/driving-traffic/${restaurantCoords[0]},${restaurantCoords[1]}?contours_minutes=15&polygons=true&access_token=${mapboxToken}`;
+        // Use driving profile with traffic for accurate 20-minute zone
+        const isochroneUrl = `https://api.mapbox.com/isochrone/v1/mapbox/driving-traffic/${restaurantCoords[0]},${restaurantCoords[1]}?contours_minutes=20&polygons=true&access_token=${mapboxToken}`;
         
-        console.log('Fetching 15-minute delivery zone from Mapbox Isochrone API...');
+        console.log('Fetching 20-minute delivery zone from Mapbox Isochrone API...');
         const response = await fetch(isochroneUrl);
         
         if (!response.ok) {
@@ -243,7 +243,7 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
           map.current.once('idle', fitMapToBounds);
         }
 
-        console.log('✅ 15-minute delivery zone successfully displayed on map');
+        console.log('✅ 20-minute delivery zone successfully displayed on map');
         setIsLoadingZone(false);
       } catch (error) {
         console.error('❌ Error loading service area:', error);
@@ -494,12 +494,12 @@ const ServiceAreaMap = ({ validatedAddress }: ServiceAreaMapProps) => {
         <div className="flex items-start gap-2">
           <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-sm mb-1">15-Minute Delivery Zone</h4>
+            <h4 className="font-semibold text-sm mb-1">20-Minute Delivery Zone</h4>
             <p className="text-xs text-muted-foreground">
               {isLoadingZone 
                 ? 'Calculating delivery coverage...' 
                 : zoneError 
-                  ? 'Zone unavailable - delivery still available within 15 minutes'
+                  ? 'Zone unavailable - delivery still available within 20 minutes'
                   : 'The shaded red area shows our delivery coverage from Ricos Tacos'}
             </p>
             {!isLoadingZone && !zoneError && (
