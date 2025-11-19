@@ -280,7 +280,7 @@ const Cart = () => {
         customerEmail: validation.data.email,
         customerPhone: validation.data.phone,
         orderType: orderType,
-        deliveryAddress: orderType === "delivery" ? (selectedPlace?.formatted_address || validation.data.address) : null,
+        deliveryAddress: orderType === "delivery" ? finalDeliveryAddress : null,
         itemsCount: cart.length,
         subtotal: `$${subtotal.toFixed(2)}`,
         tax: `$${tax.toFixed(2)}`,
