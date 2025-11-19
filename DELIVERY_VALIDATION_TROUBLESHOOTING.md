@@ -1,245 +1,273 @@
 # Delivery Validation Troubleshooting Guide
 
-## Issue: "Could not validate delivery address. Proceeding anyway..."
-
-This message appears when the delivery validation fails. Here's how to diagnose and fix it.
-
----
-
-## Step 1: Check Browser Console
-
-Open your browser's Developer Tools (F12) and check the Console tab. Look for:
-
-### ✅ **Good Signs:**
-- `🚀 Starting delivery validation for: [address]`
-- `✅ Validation successful: { isValid: true, ... }`
-
-### ❌ **Error Signs:**
-- `❌ Delivery validation error:`
-- `❌ MAPBOX_PUBLIC_TOKEN not configured`
-- `❌ Network error`
-- `⏱️ Delivery validation timed out`
+**Date:** November 18, 2025  
+**Status:** 🔧 **TROUBLESHOOTING IN PROGRESS**
 
 ---
 
-## Step 2: Check Supabase Edge Function Logs
+## 🔍 Problem
 
-1. Go to your Supabase Dashboard
-2. Navigate to **Edge Functions** → **validate-delivery-address**
-3. Check the **Logs** tab
-4. Look for error messages
-
-### Common Errors:
-
-#### **Error: "MAPBOX_PUBLIC_TOKEN not configured"**
-**Problem:** The Mapbox token is not set in Supabase Edge Functions environment variables.
-
-**Fix:**
-1. Go to Supabase Dashboard → **Project Settings** → **Edge Functions** → **Secrets**
-2. Add a new secret:
-   - **Name:** `MAPBOX_PUBLIC_TOKEN`
-   - **Value:** Your Mapbox public token (starts with `pk.`)
-3. Save and redeploy the edge function
-
-#### **Error: "Mapbox geocoding error"**
-**Problem:** The Mapbox API is returning an error.
-
-**Possible Causes:**
-- Invalid Mapbox token
-- Token has expired
-- Token doesn't have required permissions
-- Rate limit exceeded
-
-**Fix:**
-1. Verify your Mapbox token is valid
-2. Check Mapbox account for rate limits
-3. Ensure token has geocoding and directions permissions
-
-#### **Error: "Network error" or "fetch failed"**
-**Problem:** The edge function cannot reach Mapbox API.
-
-**Possible Causes:**
-- Network connectivity issue
-- Mapbox API is down
-- Firewall blocking requests
-
-**Fix:**
-1. Check Mapbox status page
-2. Verify network connectivity
-3. Check Supabase edge function logs for more details
+Delivery verification is not working in:
+1. **Location page** (`/location`) - `DeliveryAddressValidator` component
+2. **Checkout flow** (`/cart`) - Delivery address validation during checkout
 
 ---
 
-## Step 3: Verify Mapbox Token Configuration
+## ✅ Fixes Applied
 
-### In Supabase Edge Functions:
+### 1. **Enhanced Error Handling**
+- Added comprehensive response parsing
+- Better handling of different Supabase response formats
+- Improved error message extraction
 
-1. **Check if token exists:**
-   - Go to Supabase Dashboard
-   - **Project Settings** → **Edge Functions** → **Secrets**
-   - Look for `MAPBOX_PUBLIC_TOKEN`
+### 2. **Improved Debugging**
+- Added detailed console logging throughout the validation flow
+- Logs include:
+  - Raw result from edge function
+  - Result type and keys
+  - Parsed data and error objects
+  - Validation result details
 
-2. **Verify token format:**
-   - Should start with `pk.`
-   - Should be your **public** token (not secret token)
-   - Should be from your Mapbox account
+### 3. **Timeout Adjustments**
+- Utility function: 20 seconds
+- Cart checkout: 25 seconds
+- Edge function API calls: 10 seconds each
 
-3. **Check token permissions:**
-   - Token should have:
-     - Geocoding API access
-     - Directions API access
-     - Isochrone API access (if using)
+### 4. **Error Detection**
+- Better detection of timeout scenarios
+- Handles validation results in error fields
+- Improved error message display
 
 ---
 
-## Step 4: Test the Edge Function Directly
+## 🔧 Troubleshooting Steps
 
-You can test the edge function directly using curl or Postman:
+### Step 1: Check Browser Console
 
-```bash
-curl -X POST https://[your-project].supabase.co/functions/v1/validate-delivery-address \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer [your-anon-key]" \
-  -d '{"address": "505 51st Street, Brooklyn, NY 11220"}'
+Open browser DevTools (F12) and check the Console tab when testing validation:
+
+**Expected Logs:**
+```
+🔍 DeliveryAddressValidator: Starting validation for place_id: [place_id]
+🚀 Starting Google Maps delivery validation for place_id: [place_id]
+📦 Google Maps validation raw result: [result]
+📦 Result type: object
+📦 Result keys: [keys]
+✅ Google Maps validation successful: [result]
+✅ DeliveryAddressValidator: Validation result: [result]
 ```
 
-**Expected Response (Success):**
+**If you see errors, note:**
+- Error message
+- Error type
+- Error stack trace
+- Network tab status
+
+### Step 2: Check Network Tab
+
+1. Open DevTools → Network tab
+2. Filter by "validate-delivery-google"
+3. Click on the request
+4. Check:
+   - **Status Code:** Should be 200
+   - **Request Payload:** Should include `place_id` and `formatted_address`
+   - **Response:** Should contain validation result
+
+**Common Issues:**
+- **404:** Edge function not deployed
+- **500:** Edge function error (check edge function logs)
+- **CORS Error:** CORS headers not configured
+- **Timeout:** Request taking too long
+
+### Step 3: Verify Edge Function Configuration
+
+**Check in Supabase Dashboard:**
+1. Go to Edge Functions
+2. Find `validate-delivery-google`
+3. Check environment variables:
+   - `GOOGLE_MAPS_SERVER_API_KEY` - **REQUIRED**
+   - `SUPABASE_URL` - Should be auto-configured
+   - `SUPABASE_SERVICE_ROLE_KEY` - Should be auto-configured
+
+**Verify Edge Function is Deployed:**
+```bash
+# In Supabase CLI
+supabase functions list
+supabase functions logs validate-delivery-google
+```
+
+### Step 4: Test Edge Function Directly
+
+**Using Supabase Dashboard:**
+1. Go to Edge Functions → `validate-delivery-google`
+2. Click "Invoke"
+3. Use this test payload:
+```json
+{
+  "place_id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+  "formatted_address": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA"
+}
+```
+
+**Expected Response:**
 ```json
 {
   "isValid": true,
-  "estimatedMinutes": 5,
-  "message": "Estimated delivery time: 5 minutes",
-  "distanceMiles": 0.5
+  "estimatedMinutes": 15,
+  "message": "Estimated delivery time: 15 minutes",
+  "distanceMiles": 2.5,
+  "formattedAddress": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA"
 }
 ```
 
-**Expected Response (Error):**
-```json
-{
-  "isValid": false,
-  "message": "Service temporarily unavailable. Please try pickup instead.",
-  "suggestPickup": true
-}
+### Step 5: Check Google Maps API Key
+
+**Verify API Key is Valid:**
+1. Check `GOOGLE_MAPS_SERVER_API_KEY` in Supabase Edge Function secrets
+2. Verify the key has these APIs enabled:
+   - Places API (Place Details)
+   - Distance Matrix API
+3. Check API key restrictions (if any)
+4. Verify billing is enabled (if required)
+
+**Test API Key:**
+```bash
+curl "https://maps.googleapis.com/maps/api/place/details/json?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4&fields=geometry,formatted_address,address_components&key=YOUR_API_KEY"
+```
+
+### Step 6: Check Edge Function Logs
+
+**In Supabase Dashboard:**
+1. Go to Edge Functions → `validate-delivery-google`
+2. Click "Logs"
+3. Look for:
+   - Error messages
+   - API call failures
+   - Timeout errors
+   - Missing environment variables
+
+**Common Log Messages:**
+- `❌ validate-delivery-google: GOOGLE_MAPS_SERVER_API_KEY not configured`
+- `❌ validate-delivery-google: Google Places API error: [error]`
+- `❌ validate-delivery-google: Distance Matrix API error: [error]`
+- `⏱️ Places API call took [time]ms`
+- `⏱️ Database query took [time]ms`
+- `⏱️ Distance Matrix API call took [time]ms`
+
+---
+
+## 🐛 Common Issues & Solutions
+
+### Issue 1: "Service temporarily unavailable"
+
+**Cause:** `GOOGLE_MAPS_SERVER_API_KEY` not set in edge function
+
+**Solution:**
+1. Go to Supabase Dashboard → Edge Functions → Secrets
+2. Add `GOOGLE_MAPS_SERVER_API_KEY` with your Google Maps API key
+3. Redeploy the edge function
+
+### Issue 2: "Validation timeout"
+
+**Cause:** Edge function taking too long (>20 seconds)
+
+**Possible Reasons:**
+- Slow Google Maps API responses
+- Network latency
+- Database query timeout
+- Cold start (first invocation)
+
+**Solution:**
+- Check edge function logs for slow API calls
+- Verify Google Maps API is responding quickly
+- Check database performance
+- Consider increasing timeout (not recommended)
+
+### Issue 3: "Invalid validation response"
+
+**Cause:** Edge function returning unexpected format
+
+**Solution:**
+- Check edge function logs
+- Verify edge function is returning proper JSON
+- Check response structure matches expected format
+
+### Issue 4: CORS Errors
+
+**Cause:** CORS headers not configured in edge function
+
+**Solution:**
+- Verify `corsHeaders` are included in edge function response
+- Check edge function code includes CORS headers
+
+### Issue 5: Edge Function Not Found (404)
+
+**Cause:** Edge function not deployed
+
+**Solution:**
+```bash
+# Deploy edge function
+supabase functions deploy validate-delivery-google
 ```
 
 ---
 
-## Step 5: Check Network Tab
+## 📊 Debugging Checklist
 
-1. Open Developer Tools (F12)
-2. Go to **Network** tab
-3. Try to validate an address
-4. Look for the request to `validate-delivery-address`
-5. Check:
-   - **Status Code:** Should be 200
-   - **Response:** Should contain JSON with `isValid` field
-   - **Request Headers:** Should include authorization
-
----
-
-## Common Issues & Solutions
-
-### Issue 1: Token Not Set
-**Symptom:** Error message mentions "MAPBOX_PUBLIC_TOKEN not configured"
-
-**Solution:**
-1. Add `MAPBOX_PUBLIC_TOKEN` to Supabase Edge Functions secrets
-2. Redeploy the edge function
-3. Test again
-
-### Issue 2: Invalid Token
-**Symptom:** Mapbox API returns 401 Unauthorized
-
-**Solution:**
-1. Verify token is correct
-2. Check token hasn't expired
-3. Regenerate token if needed
-4. Update in Supabase secrets
-
-### Issue 3: Rate Limit Exceeded
-**Symptom:** Mapbox API returns 429 Too Many Requests
-
-**Solution:**
-1. Check Mapbox account usage
-2. Wait for rate limit to reset
-3. Consider upgrading Mapbox plan
-4. Implement caching for validated addresses
-
-### Issue 4: Address Not Found
-**Symptom:** Validation returns `isValid: false` with "couldn't find that address"
-
-**Solution:**
-1. Verify address format is correct
-2. Include ZIP code in address
-3. Try a more specific address
-4. This is expected behavior for invalid addresses
-
-### Issue 5: Timeout
-**Symptom:** "Could not validate delivery address in time"
-
-**Solution:**
-1. Check network connection
-2. Verify Mapbox API is responding
-3. Check Supabase edge function logs
-4. This is non-blocking - checkout will proceed
+- [ ] Browser console shows validation attempt
+- [ ] Network tab shows request to `validate-delivery-google`
+- [ ] Request status is 200 (not 404, 500, etc.)
+- [ ] Edge function is deployed in Supabase
+- [ ] `GOOGLE_MAPS_SERVER_API_KEY` is set in edge function secrets
+- [ ] Google Maps API key is valid and has required APIs enabled
+- [ ] Edge function logs show no errors
+- [ ] Response format matches expected structure
+- [ ] Timeout values are appropriate (20s utility, 25s Cart)
 
 ---
 
-## Debugging Steps
+## 🔍 What to Check Next
 
-1. **Enable Detailed Logging:**
-   - Check browser console for detailed logs
-   - Check Supabase edge function logs
-   - Look for error messages with `❌` prefix
+1. **Check Browser Console:**
+   - Look for error messages
+   - Check validation result logs
+   - Note any timeout messages
 
-2. **Test with Known Good Address:**
-   - Try: "505 51st Street, Brooklyn, NY 11220"
-   - This should always work if token is configured
+2. **Check Network Tab:**
+   - Verify request is being made
+   - Check response status
+   - Review response payload
 
-3. **Check Edge Function Response:**
-   - Look at Network tab for actual response
-   - Verify response format matches expected structure
+3. **Check Supabase Dashboard:**
+   - Verify edge function is deployed
+   - Check environment variables
+   - Review edge function logs
 
-4. **Verify Environment Variables:**
-   - Check Supabase dashboard for `MAPBOX_PUBLIC_TOKEN`
-   - Ensure it's set correctly
-   - No typos in variable name
-
----
-
-## Quick Fix Checklist
-
-- [ ] `MAPBOX_PUBLIC_TOKEN` is set in Supabase Edge Functions secrets
-- [ ] Token starts with `pk.` (public token)
-- [ ] Token is valid and not expired
-- [ ] Edge function is deployed
-- [ ] Network connection is working
-- [ ] Mapbox API is accessible
-- [ ] Address format is correct (includes ZIP code)
+4. **Test Edge Function Directly:**
+   - Use Supabase Dashboard to invoke function
+   - Test with a known valid place_id
+   - Verify response format
 
 ---
 
-## Still Having Issues?
+## 📝 Next Steps
 
-If the issue persists after checking all of the above:
+1. **Gather Information:**
+   - Browser console errors
+   - Network tab request/response
+   - Edge function logs
+   - Edge function environment variables status
 
-1. **Check Supabase Edge Function Logs:**
-   - Look for detailed error messages
-   - Check for stack traces
-   - Note the exact error message
-
-2. **Test Edge Function Directly:**
-   - Use curl or Postman
-   - Verify it works outside of the app
+2. **Test Edge Function:**
+   - Invoke directly from Supabase Dashboard
+   - Verify API key is working
    - Check response format
 
-3. **Contact Support:**
-   - Provide browser console logs
-   - Provide Supabase edge function logs
-   - Provide the address you're testing with
-   - Provide error messages you're seeing
+3. **Verify Configuration:**
+   - Google Maps API key is set
+   - Required APIs are enabled
+   - Billing is enabled (if required)
 
 ---
 
-**Note:** The validation is designed to be non-blocking. Even if it fails, checkout will proceed. The restaurant can manually verify delivery addresses if needed.
-
+**Status:** Ready for debugging with enhanced logging and error handling.
