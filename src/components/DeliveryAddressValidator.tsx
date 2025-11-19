@@ -113,6 +113,11 @@ const DeliveryAddressValidator = ({
               place_id: place.place_id,
               formatted_address: place.formatted_address,
             });
+          } else if (value !== address) {
+            // Clear selected place when user starts typing a new address
+            setSelectedPlace(null);
+            setError(null);
+            setResult(null);
           }
         }}
         onPlaceSelect={(place) => {
