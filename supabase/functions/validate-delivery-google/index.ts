@@ -255,7 +255,8 @@ Deno.serve(async (req) => {
       }
       
       // Validate the route is reasonable (not too far)
-      if (drivingTimeMinutes && drivingTimeMinutes > MAX_DELIVERY_TIME_MINUTES) {
+      const SOFT_LIMIT_MINUTES = MAX_DELIVERY_TIME_MINUTES + 5; // small grace window for real-world traffic
+      if (drivingTimeMinutes && drivingTimeMinutes > SOFT_LIMIT_MINUTES) {
         return new Response(
           JSON.stringify({ 
             isValid: false, 
