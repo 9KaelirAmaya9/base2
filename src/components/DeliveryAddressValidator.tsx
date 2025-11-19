@@ -70,16 +70,36 @@ const DeliveryAddressValidator = ({
   };
 
   return (
-    <Card className="p-6 space-y-4">
-      <div className="space-y-2">
-        <h3 className="font-serif text-2xl font-semibold flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-primary" />
-          {t("location.deliveryCheckTitle") || "Check Delivery Availability"}
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          {t("location.deliveryCheckSubtitle") ||
-            "Enter your address to see if you're within our 15-minute delivery zone."}
-        </p>
+    <Card className="p-6 space-y-4 border-primary/20">
+      <div className="space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-full bg-primary/10">
+            <MapPin className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-serif text-2xl font-semibold text-foreground">
+              {t("location.deliveryCheckTitle") || "Delivery Eligibility Check"}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t("location.deliveryCheckSubtitle") ||
+                "We deliver within a 20-minute drive from our restaurant. Enter your address below to verify if delivery is available to your location."}
+            </p>
+          </div>
+        </div>
+        <div className="pl-14 space-y-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="h-1 w-1 rounded-full bg-primary" />
+            <span>Select an address from the autocomplete suggestions</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="h-1 w-1 rounded-full bg-primary" />
+            <span>Receive instant delivery time estimates</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="h-1 w-1 rounded-full bg-primary" />
+            <span>Pickup available if outside delivery zone</span>
+          </div>
+        </div>
       </div>
 
       <GooglePlacesAutocomplete
@@ -108,21 +128,27 @@ const DeliveryAddressValidator = ({
 
       <Button
         onClick={handleValidate}
-        disabled={validating}
-        className="w-full bg-primary hover:bg-primary/90"
+        disabled={validating || !selectedPlace}
+        className="w-full bg-primary hover:bg-primary/90 text-base py-6"
       >
         {validating ? (
           <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            {t("validating") || "Validating..."}
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            {t("validating") || "Verifying Delivery Area..."}
           </>
         ) : (
           <>
-            <CheckCircle className="h-4 w-4 mr-2" />
-            {t("location.checkButton") || "Check Delivery"}
+            <CheckCircle className="h-5 w-5 mr-2" />
+            {t("location.checkButton") || "Check Delivery Eligibility"}
           </>
         )}
       </Button>
+      
+      {!selectedPlace && address.length > 0 && (
+        <p className="text-xs text-muted-foreground text-center">
+          Please select an address from the suggestions to verify delivery availability
+        </p>
+      )}
 
       {error && (
         <div className="flex items-start gap-2 rounded-md bg-destructive/10 border border-destructive/30 p-3">
@@ -133,29 +159,62 @@ const DeliveryAddressValidator = ({
 
       {result && (
         <div
-          className={`flex items-start gap-2 rounded-md border p-3 ${
+          className={`rounded-lg border-2 p-4 ${
             result.isValid
-              ? "bg-emerald-500/10 border-emerald-500/40"
-              : "bg-destructive/10 border-destructive/40"
+              ? "bg-emerald-500/5 border-emerald-500/30"
+              : "bg-destructive/5 border-destructive/30"
           }`}
         >
-          {result.isValid ? (
-            <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5" />
-          ) : (
-            <XCircle className="h-4 w-4 text-destructive mt-0.5" />
-          )}
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              {result.message ||
-                (result.isValid
-                  ? "You're within our delivery zone!"
-                  : "This address is outside our delivery zone.")}
-            </p>
-            {result.estimatedMinutes && result.isValid && (
-              <p className="text-xs text-muted-foreground">
-                Estimated delivery time: {result.estimatedMinutes} minutes
-              </p>
-            )}
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-full ${
+              result.isValid ? "bg-emerald-500/10" : "bg-destructive/10"
+            }`}>
+              {result.isValid ? (
+                <CheckCircle className="h-5 w-5 text-emerald-500" />
+              ) : (
+                <XCircle className="h-5 w-5 text-destructive" />
+              )}
+            </div>
+            <div className="flex-1 space-y-2">
+              <div>
+                <p className={`font-semibold ${
+                  result.isValid ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"
+                }`}>
+                  {result.isValid ? "✓ Delivery Available" : "Delivery Not Available"}
+                </p>
+                <p className="text-sm text-foreground mt-1">
+                  {result.message ||
+                    (result.isValid
+                      ? "Great news! Your location is within our delivery zone."
+                      : "This address is outside our 20-minute delivery zone.")}
+                </p>
+              </div>
+              {result.estimatedMinutes && result.isValid && (
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10">
+                    <svg className="h-4 w-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-medium text-primary">~{result.estimatedMinutes} min delivery</span>
+                  </div>
+                </div>
+              )}
+              {result.distanceMiles && (
+                <p className="text-xs text-muted-foreground">
+                  Distance: {result.distanceMiles} miles from restaurant
+                </p>
+              )}
+              {!result.isValid && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    <strong>Pickup is available!</strong> Your order will be ready in 20-30 minutes.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    📍 505 51st Street, Brooklyn, NY 11220 • ☎️ (718) 633-4816
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

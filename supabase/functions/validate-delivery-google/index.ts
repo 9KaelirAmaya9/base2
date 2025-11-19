@@ -18,7 +18,7 @@ const RESTAURANT_COORDINATES = {
 };
 
 // Maximum delivery time in minutes
-const MAX_DELIVERY_TIME_MINUTES = 15;
+const MAX_DELIVERY_TIME_MINUTES = 20;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -196,16 +196,16 @@ Deno.serve(async (req) => {
       
       // Validate the route is reasonable (not too far)
       if (drivingTimeMinutes && drivingTimeMinutes > MAX_DELIVERY_TIME_MINUTES) {
-        return new Response(
-          JSON.stringify({ 
-            isValid: false, 
-            message: `We apologize, but your location is outside our 15-minute delivery zone (estimated ${drivingTimeMinutes} minutes away). Pickup is always available and ready in 20-30 minutes!`,
-            suggestPickup: true,
-            estimatedMinutes: drivingTimeMinutes,
-            distanceMiles: distanceMiles
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      return new Response(
+        JSON.stringify({ 
+          isValid: false, 
+          message: `We apologize, but your location is outside our 20-minute delivery zone (estimated ${drivingTimeMinutes} minutes away). Pickup is always available and ready in 20-30 minutes!`,
+          suggestPickup: true,
+          estimatedMinutes: drivingTimeMinutes,
+          distanceMiles: distanceMiles
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
       }
       
       // If we can't calculate route, be conservative and suggest pickup

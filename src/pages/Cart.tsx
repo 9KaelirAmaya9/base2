@@ -838,7 +838,7 @@ const Cart = () => {
                             required
                           />
                           <p className="text-xs text-muted-foreground mt-1">
-                            We deliver within a 15-minute drive from our restaurant. Select an address from the suggestions for accurate delivery validation.
+                            We deliver within a 20-minute drive from our restaurant. Select an address from the suggestions for accurate delivery validation.
                           </p>
                         </div>
                       )}
