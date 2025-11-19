@@ -137,9 +137,15 @@ const Cart = () => {
     
     console.log("Validation passed:", validation.data);
 
-    if (orderType === "delivery" && !customerInfo.address.trim()) {
+    // For delivery, check both customerInfo.address and selectedPlace.formatted_address
+    if (orderType === "delivery" && !customerInfo.address.trim() && !selectedPlace?.formatted_address) {
       toast.error("Please provide a delivery address");
       return;
+    }
+    
+    // If delivery and we have selectedPlace but no address in customerInfo, use selectedPlace
+    if (orderType === "delivery" && selectedPlace?.formatted_address && !customerInfo.address.trim()) {
+      setCustomerInfo({ ...customerInfo, address: selectedPlace.formatted_address });
     }
 
     // Validate delivery zone with Google Maps (non-blocking for guest checkout)
@@ -296,7 +302,7 @@ const Cart = () => {
         customer_email: validation.data.email || null,
         customer_phone: validation.data.phone,
         order_type: orderType,
-        delivery_address: orderType === "delivery" ? (selectedPlace?.formatted_address || validation.data.address) : null,
+        delivery_address: orderType === "delivery" ? finalDeliveryAddress : null,
         items: cart as any,
         subtotal,
         tax,
@@ -932,15 +938,16 @@ const Cart = () => {
                             document.getElementById('email')?.focus();
                             return;
                           }
-                          if (orderType === "delivery" && !customerInfo.address.trim()) {
-                            toast.error("Please enter a delivery address");
-                            document.getElementById('address')?.focus();
+                          // For delivery, check both customerInfo.address and selectedPlace
+                          if (orderType === "delivery" && !customerInfo.address.trim() && !selectedPlace?.formatted_address) {
+                            toast.error("Please enter or select a delivery address");
+                            document.getElementById('delivery-address')?.focus();
                             return;
                           }
                           // Proceed directly to checkout as guest
                           handlePlaceOrder();
                         }}
-                        disabled={cart.length === 0}
+                        disabled={cart.length === 0 || isProcessing}
                       >
                         <CreditCard className="mr-2 h-4 w-4" />
                         Proceed to Checkout
