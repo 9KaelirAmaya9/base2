@@ -185,7 +185,7 @@ export const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> =
           {label} {required && <span className="text-destructive">*</span>}
         </Label>
       )}
-      <div className="relative google-places-autocomplete">
+      <div className="relative">
         <Input
           ref={inputRef}
           id={id}
@@ -216,32 +216,38 @@ export const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> =
         </p>
       )}
       <style>{`
-        .google-places-autocomplete .pac-container {
-          z-index: 9999 !important;
+        .pac-container {
+          z-index: 99999 !important;
           border-radius: 0.5rem;
           border: 1px solid hsl(var(--border));
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
           margin-top: 0.25rem;
           font-family: inherit;
+          background: hsl(var(--background)) !important;
         }
-        .google-places-autocomplete .pac-item {
+        .pac-item {
           padding: 0.75rem 1rem;
           border: none;
           cursor: pointer;
           font-size: 0.875rem;
+          color: hsl(var(--foreground)) !important;
+          background: hsl(var(--background)) !important;
         }
-        .google-places-autocomplete .pac-item:hover {
-          background-color: hsl(var(--accent));
+        .pac-item:hover {
+          background-color: hsl(var(--accent)) !important;
         }
-        .google-places-autocomplete .pac-item-selected {
-          background-color: hsl(var(--accent));
+        .pac-item-selected {
+          background-color: hsl(var(--accent)) !important;
         }
-        .google-places-autocomplete .pac-icon {
+        .pac-icon {
           margin-right: 0.5rem;
         }
-        .google-places-autocomplete .pac-item-query {
+        .pac-item-query {
           font-weight: 500;
           color: hsl(var(--foreground));
+        }
+        .pac-matched {
+          font-weight: 600;
         }
       `}</style>
     </div>
