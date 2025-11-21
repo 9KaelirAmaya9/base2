@@ -1,0 +1,34 @@
+#!/bin/bash
+# Git pre-commit hook
+# Automatically synchronizes environment configuration before committing
+
+echo "🔍 Running pre-commit checks..."
+echo ""
+
+# Run sync-env.sh to ensure configuration is synchronized
+if [ -f "./scripts/sync-env.sh" ]; then
+    echo "📋 Synchronizing environment configuration..."
+    ./scripts/sync-env.sh
+    
+    # Check if sync made any changes
+    if git diff --quiet local.docker.yml traefik/traefik.yml .env; then
+        echo "✅ Configuration is synchronized"
+    else
+        echo ""
+        echo "⚠️  Configuration files were synchronized and updated:"
+        git diff --name-only local.docker.yml traefik/traefik.yml .env | sed 's/^/  - /'
+        echo ""
+        echo "📝 These changes have been applied but not staged."
+        echo "   Review the changes and stage them if needed:"
+        echo "   git add local.docker.yml traefik/traefik.yml .env"
+        echo ""
+        echo "❌ Commit aborted. Please review and stage the synchronized files."
+        exit 1
+    fi
+else
+    echo "⚠️  sync-env.sh not found, skipping synchronization"
+fi
+
+echo ""
+echo "✅ Pre-commit checks passed!"
+exit 0

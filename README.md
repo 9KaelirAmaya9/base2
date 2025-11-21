@@ -1,0 +1,498 @@
+# Base2 Docker Environment
+
+A robust, production-ready Docker setup with enhanced security, health checks, and comprehensive environment variable management.
+
+## 🚀 Services
+
+This Docker environment includes the following services:
+
+- **React App**: Node.js-based React application with Google OAuth
+- **Backend API**: Node.js/Express authentication server (NEW!)
+- **Nginx**: Web server and reverse proxy
+- **PostgreSQL**: Relational database with authentication schema
+- **pgAdmin**: PostgreSQL management interface
+- **Traefik**: Modern reverse proxy and load balancer
+
+## 📋 Prerequisites
+
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- At least 4GB RAM available for Docker
+
+## 🔧 Setup Instructions
+
+### 1. Environment Configuration
+
+Copy the example environment file and customize it:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` to configure your services with custom values. All environment variables are documented in the file.
+
+### 2. Build and Start Services
+
+```bash
+# Build all services
+docker-compose -f local.docker.yml build
+
+# Start all services
+docker-compose -f local.docker.yml up -d
+
+# View logs
+docker-compose -f local.docker.yml logs -f
+```
+
+### 3. Configure Authentication (IMPORTANT!)
+
+Before starting, you MUST configure:
+
+**A. JWT Secret (Required):**
+
+```bash
+# Generate secure JWT secret
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+
+# Add to .env as JWT_SECRET=<generated_value>
+```
+
+**B. Email Service (Required for email/password auth):**
+
+```env
+# For Gmail (development):
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_gmail_app_password  # See backend/README.md for setup
+
+# Or use SendGrid, Mailgun, etc.
+```
+
+See `backend/README.md` for detailed email setup instructions.
+
+### 4. Access Services
+
+Once running, access the services at:
+
+- **React App**: http://localhost:3000
+- **Backend API**: http://localhost:5001 (NEW!)
+- **API Health**: http://localhost:5001/api/health
+- **Nginx**: http://localhost:8080
+- **pgAdmin**: http://localhost:5050
+- **Traefik Dashboard**: http://localhost:8082/dashboard/
+- **Traefik API**: http://localhost:8082/api/rawdata
+- **PostgreSQL**: localhost:5432
+
+## 🔐 Security Enhancements
+
+All Dockerfiles have been enhanced with:
+
+### Non-Root Users
+
+- Each service runs as a non-root user for improved security
+- Proper file permissions and ownership configured
+
+### Health Checks
+
+- Built-in health monitoring for all services
+- Automatic restart on failure
+- Configurable health check intervals
+
+### Resource Management
+
+- Optimized PostgreSQL configuration for better performance
+- Nginx worker process and connection tuning
+- Proper volume management for data persistence
+
+## 📝 Environment Variables
+
+### React App
+
+- `REACT_APP_NODE_VERSION`: Node.js version (default: 18-alpine)
+- `REACT_APP_PORT`: Internal container port (default: 3000)
+- `REACT_APP_HOST_PORT`: Host machine port (default: 3000)
+- `REACT_APP_API_URL`: API endpoint URL
+
+### Nginx
+
+- `NGINX_VERSION`: Nginx version (default: 1.25-alpine)
+- `NGINX_PORT`: Internal container port (default: 80)
+- `NGINX_HOST_PORT`: Host machine port (default: 8080)
+- `NGINX_WORKER_PROCESSES`: Number of worker processes (default: auto)
+- `NGINX_WORKER_CONNECTIONS`: Max connections per worker (default: 1024)
+
+### PostgreSQL
+
+- `POSTGRES_VERSION`: PostgreSQL version (default: 16-alpine)
+- `POSTGRES_USER`: Database user
+- `POSTGRES_PASSWORD`: Database password (change in production!)
+- `POSTGRES_DB`: Database name
+- `POSTGRES_PORT`: PostgreSQL port (default: 5432)
+- `POSTGRES_HOST_PORT`: Host machine port (default: 5432)
+
+### pgAdmin
+
+- `PGADMIN_VERSION`: pgAdmin version (default: latest)
+- `PGADMIN_DEFAULT_EMAIL`: Admin email
+- `PGADMIN_DEFAULT_PASSWORD`: Admin password (change in production!)
+- `PGADMIN_PORT`: Internal container port (default: 80)
+- `PGADMIN_HOST_PORT`: Host machine port (default: 5050)
+
+### Traefik
+
+- `TRAEFIK_VERSION`: Traefik version (default: v3.0)
+- `TRAEFIK_PORT`: Web entrypoint port (default: 80)
+- `TRAEFIK_HOST_PORT`: Host machine port for web (default: 8081)
+- `TRAEFIK_API_PORT`: API/Dashboard port (default: 8082)
+- `TRAEFIK_API_ENTRYPOINT`: API entrypoint name (default: api)
+- `TRAEFIK_LOG_LEVEL`: Log verbosity (default: INFO)
+- `TRAEFIK_DOCKER_NETWORK`: Docker network to monitor (default: base2_network)
+- `TRAEFIK_EXPOSED_BY_DEFAULT`: Auto-expose containers (default: false)
+
+**⚠️ Important Notes:**
+
+1. When changing the network name, you must update **both** `NETWORK_NAME` and `TRAEFIK_DOCKER_NETWORK` to the same value in `.env` for Traefik to work correctly. These two variables must always match.
+2. Additionally, you must update the network key in `local.docker.yml` (currently `base2_network`) to match your new network name, as Docker Compose does not support variable substitution in network definition keys.
+3. The `TRAEFIK_API_ENTRYPOINT` variable must be set to `api` as the entrypoint key in `traefik.yml` cannot use variable substitution. If you need a different entrypoint name, you must also update the literal key in `traefik/traefik.yml`.
+
+## 🔄 Environment Synchronization
+
+This project includes an automatic synchronization system that keeps configuration files in sync with `.env` variables.
+
+### Why Synchronization is Needed
+
+Due to limitations in Docker Compose and YAML, certain values cannot use variable substitution:
+
+- Network definition keys in `local.docker.yml`
+- EntryPoint keys in `traefik/traefik.yml`
+- The `TRAEFIK_DOCKER_NETWORK` must match `NETWORK_NAME`
+
+### Automatic Synchronization
+
+The `scripts/sync-env.sh` script automatically updates these literal values to match your `.env` file.
+
+**Integration Points:**
+
+1. **Manual Execution:**
+
+   ```bash
+   ./scripts/sync-env.sh
+   ```
+
+2. **Automatic on Start:**
+   The `start.sh` script automatically runs synchronization before starting services.
+
+3. **Git Pre-Commit Hook:**
+
+   ```bash
+   ./scripts/setup-hooks.sh  # Install git hooks
+   ```
+
+   Prevents commits if configuration is out of sync.
+
+4. **CI/CD (GitHub Actions):**
+   Workflow at `.github/workflows/sync-config.yml` validates configuration on push/PR.
+
+### What Gets Synchronized
+
+- **`local.docker.yml`**: Network definition key and service network references
+- **`traefik/traefik.yml`**: API entrypoint key
+- **`.env`**: `TRAEFIK_DOCKER_NETWORK` matches `NETWORK_NAME`
+
+---
+
+## 🛠️ Management Scripts
+
+The `scripts/` directory contains convenient management scripts for common Docker operations:
+
+### Available Scripts
+
+#### `./scripts/sync-env.sh` - Synchronize Configuration
+
+Automatically synchronizes literal values in configuration files with `.env` variables.
+
+```bash
+./scripts/sync-env.sh              # Sync configuration with .env
+```
+
+**What it does:**
+
+- Updates network keys in `local.docker.yml`
+- Updates API entrypoint in `traefik/traefik.yml`
+- Ensures `TRAEFIK_DOCKER_NETWORK` matches `NETWORK_NAME`
+- Creates backups before making changes
+- Reports what was changed
+
+#### `./scripts/setup-hooks.sh` - Setup Git Hooks
+
+Install git hooks for automatic configuration validation.
+
+```bash
+./scripts/setup-hooks.sh           # Install pre-commit hook
+```
+
+**What it does:**
+
+- Installs pre-commit hook that runs `sync-env.sh`
+- Prevents commits if configuration is out of sync
+- Helps maintain consistency across team members
+
+#### `./scripts/start.sh` - Start Services
+
+Start all Docker services. Automatically checks for .env file.
+
+```bash
+./scripts/start.sh              # Start in detached mode
+./scripts/start.sh --build      # Build before starting
+./scripts/start.sh --foreground # Run in foreground
+```
+
+#### `./scripts/stop.sh` - Stop Services
+
+Stop all Docker services.
+
+```bash
+./scripts/stop.sh               # Stop services
+./scripts/stop.sh --volumes     # Stop and remove volumes (deletes data!)
+```
+
+#### `./scripts/restart.sh` - Restart Services
+
+Restart services without rebuilding.
+
+```bash
+./scripts/restart.sh            # Restart all services
+./scripts/restart.sh nginx      # Restart specific service
+```
+
+#### `./scripts/logs.sh` - View Logs
+
+View service logs with filtering options.
+
+```bash
+./scripts/logs.sh               # View last 100 lines of all services
+./scripts/logs.sh --follow      # Follow all logs in real-time
+./scripts/logs.sh nginx         # View nginx logs
+./scripts/logs.sh -f postgres   # Follow postgres logs
+./scripts/logs.sh -t 50 nginx   # View last 50 lines of nginx
+```
+
+#### `./scripts/status.sh` - Check Status
+
+Get comprehensive status of all services.
+
+```bash
+./scripts/status.sh             # Show status, health, and resource usage
+```
+
+#### `./scripts/health.sh` - Health Check
+
+Check health status of all services with detailed output.
+
+```bash
+./scripts/health.sh             # Detailed health check for all services
+```
+
+#### `./scripts/rebuild.sh` - Rebuild Services
+
+Rebuild Docker images.
+
+```bash
+./scripts/rebuild.sh            # Rebuild all services
+./scripts/rebuild.sh nginx      # Rebuild specific service
+./scripts/rebuild.sh --no-cache # Rebuild without cache
+```
+
+#### `./scripts/clean.sh` - Clean Resources
+
+Clean up Docker resources.
+
+```bash
+./scripts/clean.sh              # Remove containers only
+./scripts/clean.sh --volumes    # Remove containers and volumes
+./scripts/clean.sh --images     # Remove containers and images
+./scripts/clean.sh --all        # Remove everything
+```
+
+#### `./scripts/debug.sh` - Debug Services
+
+Inspect containers, networks, and volumes for troubleshooting.
+
+```bash
+./scripts/debug.sh              # Debug all services
+./scripts/debug.sh postgres     # Debug specific service
+```
+
+#### `./scripts/shell.sh` - Access Container Shell
+
+Access a container's shell for direct interaction.
+
+```bash
+./scripts/shell.sh postgres     # Access postgres container
+./scripts/shell.sh -b react-app # Access react-app with bash
+```
+
+#### `./scripts/kill.sh` - ⚠️ NUCLEAR OPTION ⚠️
+
+**WARNING: DESTRUCTIVE OPERATION!** Completely removes ALL Docker resources for this project including all data. This is the nuclear option when you want to start completely fresh.
+
+```bash
+./scripts/kill.sh               # Requires typing "DELETE EVERYTHING" to confirm
+./scripts/kill.sh --force       # Skip confirmation (use with extreme caution!)
+```
+
+This script will permanently delete:
+
+- All containers (base2\_\*)
+- All volumes (base2\_\*) - **ALL DATA WILL BE LOST**
+- All images (base2\_\*)
+- All networks (base2\_\*)
+
+⚠️ **This action CANNOT be undone!** Use only when you want to completely reset the environment.
+
+### Quick Start with Scripts
+
+```bash
+# Initial setup
+./scripts/start.sh --build
+
+# Check if everything is running
+./scripts/status.sh
+
+# View logs
+./scripts/logs.sh --follow
+
+# Access a container
+./scripts/shell.sh postgres
+
+# Stop everything
+./scripts/stop.sh
+```
+
+## 🛠️ Direct Docker Compose Commands
+
+If you prefer to use docker-compose directly:
+
+### Start Services
+
+```bash
+docker-compose -f local.docker.yml up -d
+```
+
+### Stop Services
+
+```bash
+docker-compose -f local.docker.yml down
+```
+
+### Restart a Specific Service
+
+```bash
+docker-compose -f local.docker.yml restart nginx
+```
+
+### View Logs
+
+```bash
+# All services
+docker-compose -f local.docker.yml logs -f
+
+# Specific service
+docker-compose -f local.docker.yml logs -f postgres
+```
+
+### Rebuild After Changes
+
+```bash
+docker-compose -f local.docker.yml up -d --build
+```
+
+### Check Service Health
+
+```bash
+docker-compose -f local.docker.yml ps
+```
+
+### Access Container Shell
+
+```bash
+docker-compose -f local.docker.yml exec postgres sh
+```
+
+## 🗄️ Data Persistence
+
+The following data is persisted in named volumes:
+
+- `postgres_data`: PostgreSQL database files
+- `pgadmin_data`: pgAdmin configuration and settings
+- `traefik_logs`: Traefik access and error logs
+
+To remove volumes (⚠️ **WARNING: This will delete all data**):
+
+```bash
+docker-compose -f local.docker.yml down -v
+```
+
+## 🔍 Troubleshooting
+
+### Port Conflicts
+
+If you encounter port conflicts, update the `*_HOST_PORT` variables in your `.env` file.
+
+### Permission Issues
+
+Ensure Docker has proper permissions:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Then log out and back in.
+
+### Container Won't Start
+
+Check logs for the specific service:
+
+```bash
+docker-compose -f local.docker.yml logs servicename
+```
+
+### Database Connection Issues
+
+Verify PostgreSQL is healthy:
+
+```bash
+docker-compose -f local.docker.yml exec postgres pg_isready -U myuser
+```
+
+## 🚨 Production Considerations
+
+Before deploying to production:
+
+1. **Change Default Passwords**: Update all default passwords in `.env`
+2. **Enable SSL/TLS**: Configure HTTPS for Traefik and Nginx
+3. **Review Security Settings**: Disable debug modes and insecure settings
+4. **Configure Backups**: Set up regular database backups
+5. **Monitor Resources**: Implement proper logging and monitoring
+6. **Update Versions**: Keep all service versions up to date
+7. **Network Isolation**: Review and restrict network access as needed
+
+## 📚 Additional Resources
+
+- [Docker Documentation](https://docs.docker.com/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Traefik Documentation](https://doc.traefik.io/traefik/)
+- [Nginx Documentation](https://nginx.org/en/docs/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+
+## 📄 License
+
+This project configuration is available for use under your project's license terms.
+
+## 🤝 Contributing
+
+To contribute improvements:
+
+1. Update the relevant Dockerfile or configuration
+2. Test thoroughly with `docker-compose build` and `up`
+3. Update this README with any new features or changes
+4. Document environment variables in `.env.example`

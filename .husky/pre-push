@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🧪 Running tests before push..."
+
+# Run all tests
+./scripts/test.sh
+
+if [ $? -eq 0 ]; then
+  echo "✅ All tests passed! Proceeding with push..."
+else
+  echo "❌ Tests failed! Push aborted."
+  echo "Fix the failing tests before pushing."
+  exit 1
+fi

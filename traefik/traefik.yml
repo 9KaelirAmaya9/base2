@@ -1,0 +1,39 @@
+# Traefik Configuration File
+# Environment variable support for dynamic configuration
+
+# Entry points configuration
+entryPoints:
+  web:
+    address: ':${TRAEFIK_PORT}'
+
+  # API and dashboard entrypoint (Traefik v3 uses 'traefik' as the internal name)
+  traefik:
+    address: ':${TRAEFIK_API_PORT}'
+
+# API and Dashboard
+api:
+  dashboard: true
+  insecure: true
+
+# Ping health check
+ping: {}
+
+# Log configuration
+log:
+  level: '${TRAEFIK_LOG_LEVEL}'
+  filePath: '/var/log/traefik/traefik.log'
+  format: json
+
+# Access logs
+accessLog:
+  filePath: '/var/log/traefik/access.log'
+  format: json
+  bufferingSize: 100
+
+# Providers configuration
+providers:
+  docker:
+    endpoint: 'unix:///var/run/docker.sock'
+    exposedByDefault: ${TRAEFIK_EXPOSED_BY_DEFAULT}
+    network: '${TRAEFIK_DOCKER_NETWORK}'
+    watch: true

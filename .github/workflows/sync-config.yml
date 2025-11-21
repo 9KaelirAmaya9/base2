@@ -1,0 +1,48 @@
+name: Sync Environment Configuration
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  sync-config:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run environment sync script
+        run: |
+          chmod +x scripts/sync-env.sh
+          ./scripts/sync-env.sh
+
+      - name: Check for configuration changes
+        id: check_changes
+        run: |
+          if git diff --quiet local.docker.yml traefik/traefik.yml .env; then
+            echo "No configuration changes needed"
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+          else
+            echo "Configuration changes detected"
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+            git diff local.docker.yml traefik/traefik.yml .env
+          fi
+
+      - name: Fail if configuration is out of sync
+        if: steps.check_changes.outputs.changes_detected == 'true'
+        run: |
+          echo "❌ Configuration is out of sync!"
+          echo ""
+          echo "The following files need to be synchronized:"
+          git diff --name-only local.docker.yml traefik/traefik.yml .env
+          echo ""
+          echo "Run './scripts/sync-env.sh' locally to synchronize configuration."
+          exit 1
+
+      - name: Configuration is synchronized
+        if: steps.check_changes.outputs.changes_detected == 'false'
+        run: |
+          echo "✅ Configuration is properly synchronized!"
