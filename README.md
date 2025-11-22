@@ -1,6 +1,15 @@
 # Base2 Docker Environment
 
+
 A robust, production-ready Docker setup with enhanced security, health checks, and comprehensive environment variable management.
+
+## ⚠️ Platform Compatibility
+
+All scripts require Bash and are tested on Mac, Linux, and Windows (WSL/Git Bash). For Windows, use WSL or Git Bash for best results.
+
+## ⚠️ Docker Compose Version
+
+Docker Compose v2.0.0 or newer is required. Scripts will check and warn if your version is outdated.
 
 ## 🚀 Services
 
@@ -34,6 +43,7 @@ Edit `.env` to configure your services with custom values. All environment varia
 ### 2. Build and Start Services
 
 ```bash
+```bash
 # Build all services
 docker-compose -f local.docker.yml build
 
@@ -42,6 +52,7 @@ docker-compose -f local.docker.yml up -d
 
 # View logs
 docker-compose -f local.docker.yml logs -f
+```
 ```
 
 ### 3. Configure Authentication (IMPORTANT!)
@@ -155,6 +166,15 @@ All Dockerfiles have been enhanced with:
 3. The `TRAEFIK_API_ENTRYPOINT` variable must be set to `api` as the entrypoint key in `traefik.yml` cannot use variable substitution. If you need a different entrypoint name, you must also update the literal key in `traefik/traefik.yml`.
 
 ## 🔄 Environment Synchronization
+## 🛠️ Troubleshooting
+
+If you encounter issues running scripts:
+
+- Ensure you are using Bash (not PowerShell or Command Prompt).
+- On Windows, use WSL or Git Bash.
+- Check your Docker Compose version (`docker-compose version`).
+- Review error messages for missing files or environment variables.
+- See the onboarding section in quickstart.md for more help.
 
 This project includes an automatic synchronization system that keeps configuration files in sync with `.env` variables.
 
@@ -202,78 +222,53 @@ The `scripts/sync-env.sh` script automatically updates these literal values to m
 
 ## 🛠️ Management Scripts
 
-The `scripts/` directory contains convenient management scripts for common Docker operations:
+The `scripts/` directory contains convenient management scripts for common Docker operations. All major scripts now support a `--self-test` mode to verify environment and dependencies before running.
 
 ### Available Scripts
 
-#### `./scripts/sync-env.sh` - Synchronize Configuration
-
-Automatically synchronizes literal values in configuration files with `.env` variables.
-
-```bash
-./scripts/sync-env.sh              # Sync configuration with .env
-```
-
-**What it does:**
-
-- Updates network keys in `local.docker.yml`
-- Updates API entrypoint in `traefik/traefik.yml`
-- Ensures `TRAEFIK_DOCKER_NETWORK` matches `NETWORK_NAME`
-- Creates backups before making changes
-- Reports what was changed
-
-#### `./scripts/setup-hooks.sh` - Setup Git Hooks
-
-Install git hooks for automatic configuration validation.
-
-```bash
-./scripts/setup-hooks.sh           # Install pre-commit hook
-```
-
-**What it does:**
-
-- Installs pre-commit hook that runs `sync-env.sh`
-- Prevents commits if configuration is out of sync
-- Helps maintain consistency across team members
-
 #### `./scripts/start.sh` - Start Services
 
-Start all Docker services. Automatically checks for .env file.
+Start all Docker services. Automatically checks for .env file and validates required environment variables. Supports self-test mode:
 
 ```bash
-./scripts/start.sh              # Start in detached mode
-./scripts/start.sh --build      # Build before starting
-./scripts/start.sh --foreground # Run in foreground
+./scripts/start.sh --self-test   # Run self-test for environment and config
+./scripts/start.sh               # Start in detached mode
+./scripts/start.sh --build       # Build before starting
+./scripts/start.sh --foreground  # Run in foreground
 ```
 
 #### `./scripts/stop.sh` - Stop Services
 
-Stop all Docker services.
+Stop all Docker services. Supports self-test mode:
 
 ```bash
-./scripts/stop.sh               # Stop services
-./scripts/stop.sh --volumes     # Stop and remove volumes (deletes data!)
+./scripts/stop.sh --self-test    # Run self-test for Docker and Compose
+./scripts/stop.sh                # Stop services
+./scripts/stop.sh --volumes      # Stop and remove volumes (deletes data!)
 ```
 
-#### `./scripts/restart.sh` - Restart Services
+#### `./scripts/test.sh` - Run Tests
 
-Restart services without rebuilding.
+Run all backend and frontend tests. Supports self-test mode:
 
 ```bash
-./scripts/restart.sh            # Restart all services
-./scripts/restart.sh nginx      # Restart specific service
+./scripts/test.sh --self-test    # Run self-test for Node, npm, and test scripts
+./scripts/test.sh                # Run all tests
+./scripts/test.sh --coverage     # Run tests with coverage
+./scripts/test.sh --watch        # Run tests in watch mode
 ```
 
 #### `./scripts/logs.sh` - View Logs
 
-View service logs with filtering options.
+View service logs with filtering options. Supports self-test mode:
 
 ```bash
-./scripts/logs.sh               # View last 100 lines of all services
-./scripts/logs.sh --follow      # Follow all logs in real-time
-./scripts/logs.sh nginx         # View nginx logs
-./scripts/logs.sh -f postgres   # Follow postgres logs
-./scripts/logs.sh -t 50 nginx   # View last 50 lines of nginx
+./scripts/logs.sh --self-test    # Run self-test for Docker and Compose
+./scripts/logs.sh                # View last 100 lines of all services
+./scripts/logs.sh --follow       # Follow all logs in real-time
+./scripts/logs.sh nginx          # View nginx logs
+./scripts/logs.sh -f postgres    # Follow postgres logs
+./scripts/logs.sh -t 50 nginx    # View last 50 lines of nginx
 ```
 
 #### `./scripts/status.sh` - Check Status

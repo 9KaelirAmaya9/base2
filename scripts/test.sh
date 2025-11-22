@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# Test Script - Run all tests for backend and frontend
-# Usage: ./scripts/test.sh [--coverage] [--watch]
+# ==========================================
+# Base2 Test Script
+# Usage: ./scripts/test.sh [--coverage] [--watch] [--self-test]
+# Options:
+#   --coverage        Run tests with coverage
+#   --watch           Run tests in watch mode
+#   --self-test       Run script self-test and exit
+# ==========================================
 
 set -e
 
@@ -14,6 +20,7 @@ NC='\033[0m' # No Color
 # Parse arguments
 COVERAGE_FLAG=""
 WATCH_FLAG=""
+SELF_TEST=false
 
 for arg in "$@"
 do
@@ -26,11 +33,42 @@ do
         WATCH_FLAG="--watch"
         shift
         ;;
+        --self-test)
+        SELF_TEST=true
+        shift
+        ;;
         *)
         shift
         ;;
     esac
 done
+
+# Self-test function
+if [ "$SELF_TEST" = true ]; then
+    echo -e "${BLUE}🔎 Running test.sh self-test...${NC}"
+    # Check Node.js
+    if ! command -v node &>/dev/null; then
+        echo -e "${RED}❌ Node.js not found.${NC}"
+        exit 1
+    fi
+    # Check npm
+    if ! command -v npm &>/dev/null; then
+        echo -e "${RED}❌ npm not found.${NC}"
+        exit 1
+    fi
+    # Check backend test script
+    if ! grep -q 'test' backend/package.json; then
+        echo -e "${RED}❌ Backend test script missing in package.json.${NC}"
+        exit 1
+    fi
+    # Check frontend test script
+    if ! grep -q 'test' react-app/package.json; then
+        echo -e "${RED}❌ Frontend test script missing in package.json.${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}✅ Self-test passed.${NC}"
+    exit 0
+fi
 
 echo -e "${BLUE}================================================${NC}"
 echo -e "${BLUE}Running All Tests${NC}"

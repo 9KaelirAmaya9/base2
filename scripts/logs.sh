@@ -13,6 +13,7 @@ cd "$PROJECT_DIR"
 SERVICE=""
 FOLLOW=false
 TAIL="100"
+SELF_TEST=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -24,6 +25,10 @@ while [[ $# -gt 0 ]]; do
             TAIL="$2"
             shift 2
             ;;
+        --self-test)
+            SELF_TEST=true
+            shift
+            ;;
         --help|-h)
             echo "Usage: ./logs.sh [OPTIONS] [SERVICE]"
             echo ""
@@ -34,6 +39,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  -f, --follow      Follow log output"
             echo "  -t, --tail N      Number of lines to show (default: 100)"
+            echo "  --self-test       Run script self-test and exit"
             echo "  -h, --help        Show this help message"
             echo ""
             echo "Examples:"
@@ -49,7 +55,24 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
     esac
-done
+    done
+
+# Self-test function
+if [ "$SELF_TEST" = true ]; then
+    echo "🔎 Running logs.sh self-test..."
+    # Check Docker
+    if ! command -v docker &>/dev/null; then
+        echo "❌ Docker not found."
+        exit 1
+    fi
+    # Check Docker Compose
+    if ! command -v docker-compose &>/dev/null; then
+        echo "❌ Docker Compose not found."
+        exit 1
+    fi
+    echo "✅ Self-test passed."
+    exit 0
+fi
 
 echo "📋 Viewing logs for Base2 Docker Environment"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
