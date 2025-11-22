@@ -27,6 +27,7 @@ import Dashboard from "./pages/Dashboard";
 import OrderSuccess from "./pages/OrderSuccess";
 import NotFound from "./pages/NotFound";
 import ServerError from "./pages/ServerError";
+import MenuCatalog from "./pages/MenuCatalog";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Configure React Query with optimized defaults
@@ -53,6 +54,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/menu" element={<Menu />} />
+                <Route path="/menu-catalog" element={<MenuCatalog />} />
                 <Route path="/order" element={<Order />} />
                 <Route path="/location" element={<Location />} />
                 <Route path="/cart" element={<Cart />} />
