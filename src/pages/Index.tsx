@@ -280,8 +280,21 @@ const Index = () => {
               </p>
             </div>
           </div>
-          <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border text-center text-muted-foreground text-xs sm:text-sm">
-            <p>&copy; {new Date().getFullYear()} Ricos Tacos. {t("home.footer.copyright")}</p>
+          <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-border">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-muted-foreground text-xs sm:text-sm">
+                &copy; {new Date().getFullYear()} Ricos Tacos. {t("home.footer.copyright")}
+              </p>
+              <div className="flex gap-4 text-xs">
+                <Link to="/auth?redirect=/admin" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Admin
+                </Link>
+                <span className="text-muted-foreground/50">|</span>
+                <Link to="/kitchen-login" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Kitchen Staff
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
