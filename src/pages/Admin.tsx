@@ -12,7 +12,8 @@ import {
   ClipboardList,
   Users,
   Settings,
-  Package
+  Package,
+  KeyRound
 } from "lucide-react";
 
 const Admin = () => {
@@ -148,6 +149,13 @@ const Admin = () => {
       icon: Users,
       onClick: () => navigate("/admin/roles"),
       color: "bg-purple-500 hover:bg-purple-600"
+    },
+    {
+      title: "Password Resets",
+      description: "User password support",
+      icon: KeyRound,
+      onClick: () => navigate("/admin/passwords"),
+      color: "bg-indigo-500 hover:bg-indigo-600"
     },
     {
       title: "Kitchen Display",
