@@ -15,7 +15,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const checkAuthAndRole = async () => {
       try {
@@ -61,7 +61,6 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
           if (roleError) {
             console.error("Role query error:", roleError);
-            // If query fails, assume no role
             userHasRole = false;
           } else if (roles && roles.length > 0) {
             // Check if user has the required role (or admin can access kitchen)
@@ -106,6 +105,9 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
       }
     };
 
+    // Clear any existing timeout
+    if (timeoutId) clearTimeout(timeoutId);
+
     // Set a timeout failsafe (10 seconds max)
     timeoutId = setTimeout(() => {
       if (mounted && isLoading) {
@@ -120,18 +122,15 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-      
-      // Reset and re-check
-      setIsLoading(true);
       checkAuthAndRole();
     });
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, [requiredRole, isLoading]);
+  }, [requiredRole]);
 
   if (isLoading) {
     return (
