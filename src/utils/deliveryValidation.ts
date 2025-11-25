@@ -10,8 +10,6 @@ export interface DeliveryValidationResult {
 
 export const validateDeliveryAddress = async (address: string): Promise<DeliveryValidationResult> => {
   try {
-    console.log("🚀 Starting delivery validation for:", address);
-    
     if (!address || address.trim().length === 0) {
       return {
         isValid: false,
@@ -32,8 +30,6 @@ export const validateDeliveryAddress = async (address: string): Promise<Delivery
 
     const result = await Promise.race([validationPromise, timeoutPromise]) as any;
 
-    console.log("📦 Delivery validation raw result:", result);
-
     // Handle different response formats
     let data: any = null;
     let error: any = null;
@@ -43,26 +39,18 @@ export const validateDeliveryAddress = async (address: string): Promise<Delivery
       if ('data' in result && 'error' in result) {
         data = result.data;
         error = result.error;
-        console.log("📦 Supabase function response - data:", data, "error:", error);
       } else if ('isValid' in result) {
         // Direct response from edge function
         data = result;
-        console.log("📦 Direct edge function response:", data);
       } else {
         // Try to parse as error
         error = result;
-        console.log("📦 Parsed as error:", error);
       }
     } else {
       error = result;
-      console.log("📦 Non-object result, treating as error:", error);
     }
 
     if (error) {
-      console.error("❌ Delivery validation error:", error);
-      console.error("❌ Error type:", typeof error);
-      console.error("❌ Error keys:", error ? Object.keys(error) : 'null');
-      
       // Try to extract error message from error object
       let errorMessage = "We apologize, but we couldn't validate your address. Pickup is always available!";
       
@@ -76,8 +64,6 @@ export const validateDeliveryAddress = async (address: string): Promise<Delivery
         errorMessage = error.data.message;
       }
       
-      console.error("❌ Extracted error message:", errorMessage);
-      
       return {
         isValid: false,
         message: errorMessage,
@@ -87,7 +73,6 @@ export const validateDeliveryAddress = async (address: string): Promise<Delivery
 
     // Validate response structure
     if (!data || typeof data !== 'object') {
-      console.error("❌ Invalid validation response:", data);
       return {
         isValid: false,
         message: "We apologize, but we received an invalid response. Pickup is always available!",
@@ -104,10 +89,8 @@ export const validateDeliveryAddress = async (address: string): Promise<Delivery
       distanceMiles: data.distanceMiles
     };
 
-    console.log("✅ Validation successful:", validationResult);
     return validationResult;
   } catch (error: any) {
-    console.error("❌ Delivery validation exception:", error);
     
     // Handle timeout specifically
     if (error?.message === 'Validation timeout') {

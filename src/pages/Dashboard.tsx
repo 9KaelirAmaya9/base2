@@ -17,28 +17,25 @@ const Dashboard = () => {
     let isMounted = true;
 
     const fetchRoles = async (userId: string) => {
-      console.log("Dashboard: Fetching roles for user:", userId);
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
 
-      console.log("Dashboard: Roles result:", { roles, rolesError });
-
       if (!isMounted) return;
 
       if (rolesError) {
-        console.error("Dashboard: Roles error:", rolesError);
+        if (import.meta.env.DEV) {
+          console.error("Dashboard: Error fetching roles");
+        }
       } else if (roles) {
         const userRolesList = roles.map((r) => r.role);
-        console.log("Dashboard: Setting user roles:", userRolesList);
         setUserRoles(userRolesList);
       }
     };
 
     // 1) Listen for auth changes FIRST, then react
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      console.log("Dashboard: onAuthStateChange", { hasSession: !!newSession });
       if (!isMounted) return;
 
       setSession(newSession ?? null);
@@ -57,7 +54,6 @@ const Dashboard = () => {
 
     // 2) Also check current session on mount in case it's already available
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log("Dashboard: getSession resolved:", { hasSession: !!session, error });
       if (!isMounted) return;
 
       setSession(session ?? null);
@@ -75,7 +71,6 @@ const Dashboard = () => {
     // Safety timeout to prevent infinite loading
     const safety = setTimeout(() => {
       if (isMounted) {
-        console.warn("Dashboard: safety timeout reached, forcing loading=false");
         setLoading(false);
       }
     }, 10000); // Increased to 10s for slower connections
