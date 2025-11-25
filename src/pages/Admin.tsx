@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { 
   DollarSign, 
@@ -13,7 +15,11 @@ import {
   Users,
   Settings,
   Package,
-  KeyRound
+  KeyRound,
+  AlertCircle,
+  CheckCircle,
+  Shield,
+  Loader2
 } from "lucide-react";
 
 const Admin = () => {
@@ -25,6 +31,34 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [authStatus, setAuthStatus] = useState<"checking" | "authenticated" | "error">("checking");
+
+  const checkAuthStatus = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserEmail(session.user.email || "");
+        setAuthStatus("authenticated");
+        
+        // Fetch user roles
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
+        
+        if (roles) {
+          setUserRoles(roles.map(r => r.role));
+        }
+      } else {
+        setAuthStatus("error");
+      }
+    } catch (error) {
+      console.error("Auth status check failed:", error);
+      setAuthStatus("error");
+    }
+  }, []);
 
   const loadMetrics = useCallback(async () => {
     setIsLoading(true);
@@ -81,6 +115,7 @@ const Admin = () => {
   }, []);
 
   useEffect(() => {
+    checkAuthStatus();
     loadMetrics();
 
     // Subscribe to real-time order updates
@@ -102,7 +137,7 @@ const Admin = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadMetrics]);
+  }, [loadMetrics, checkAuthStatus]);
 
   const metrics = useMemo(() => [
     {
@@ -176,9 +211,18 @@ const Admin = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <div>
+            <p className="text-lg font-medium text-foreground">Loading Admin Dashboard</p>
+            <p className="text-sm text-muted-foreground mt-1">Fetching metrics and permissions...</p>
+          </div>
+          {authStatus === "checking" && (
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Verifying authentication...</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -187,41 +231,93 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-2">Welcome back! Here's your overview</p>
+        {/* Header with Auth Status */}
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground">Admin Dashboard</h1>
+              <p className="text-muted-foreground mt-2">Welcome back! Here's your overview</p>
+            </div>
+            <Button variant="outline" onClick={() => navigate("/dashboard")}>
+              Back to Dashboard
+            </Button>
           </div>
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
-          </Button>
+          
+          {/* Auth & Role Status Indicator */}
+          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+            <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">Authenticated:</span>
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {userEmail || "Loading..."}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium">Roles:</span>
+                {userRoles.length > 0 ? (
+                  <div className="flex gap-1">
+                    {userRoles.map(role => (
+                      <Badge key={role} variant="default" className="text-xs">
+                        {role}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <Badge variant="outline" className="text-xs">
+                    Loading roles...
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-muted-foreground">Access granted</span>
+              </div>
+            </AlertDescription>
+          </Alert>
         </div>
 
+        {/* Error Alert with Better Visibility */}
         {error && (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <p className="text-destructive">Error: {error}</p>
-              <Button onClick={loadMetrics} className="mt-4">Retry</Button>
-            </CardContent>
-          </Card>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Failed to load dashboard metrics</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+              <Button onClick={loadMetrics} variant="outline" size="sm" className="ml-4">
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
 
-        {/* Metrics Grid */}
+        {/* Metrics Grid with Loading States */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {metrics.map((metric) => (
-            <Card key={metric.title}>
+            <Card key={metric.title} className="relative overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {metric.title}
                 </CardTitle>
-                <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                <div className={`p-2 rounded-lg bg-opacity-10 ${metric.color}`}>
+                  <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{metric.value}</div>
-                <p className="text-xs text-muted-foreground">
+                <div className="text-3xl font-bold tracking-tight">{metric.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
                   {metric.description}
                 </p>
               </CardContent>
+              {/* Pulse animation for real-time feel */}
+              <div className="absolute top-0 right-0 w-2 h-2 m-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </div>
             </Card>
           ))}
         </div>
@@ -265,21 +361,35 @@ const Admin = () => {
                 {recentOrders.map((order) => (
                   <div 
                     key={order.id} 
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                     className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 hover:shadow-md transition-all cursor-pointer group"
                     onClick={() => navigate("/admin/orders")}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-foreground">{order.order_number}</span>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          order.status === 'pending' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
-                          order.status === 'preparing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
-                          order.status === 'ready' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
-                          order.status === 'completed' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
-                          'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                        }`}>
-                          {order.status}
+                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {order.order_number}
                         </span>
+                        <Badge 
+                          variant={
+                            order.status === 'pending' ? 'default' :
+                            order.status === 'preparing' ? 'secondary' :
+                            order.status === 'ready' ? 'default' :
+                            order.status === 'completed' ? 'outline' :
+                            'destructive'
+                          }
+                          className={`text-xs font-medium ${
+                            order.status === 'pending' ? 'bg-orange-500' :
+                            order.status === 'preparing' ? 'bg-blue-500' :
+                            order.status === 'ready' ? 'bg-green-500' :
+                            order.status === 'completed' ? '' :
+                            'bg-red-500'
+                          }`}
+                        >
+                          {order.status.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {order.order_type}
+                        </Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {order.customer_name} • {order.customer_phone}
