@@ -13,27 +13,33 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
+  
+  // Check if this is a password reset callback
+  const isPasswordReset = searchParams.get("type") === "recovery";
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (session && !isPasswordReset) {
         navigate(redirectTo);
       }
     });
 
     // THEN check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+      if (session && !isPasswordReset) {
         navigate(redirectTo);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, redirectTo]);
+  }, [navigate, redirectTo, isPasswordReset]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +126,116 @@ const Auth = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?type=recovery`,
+      });
+
+      if (error) throw error;
+      
+      toast.success("Password reset email sent! Check your inbox.", { duration: 6000 });
+      setResetEmail("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+      
+      toast.success("Password updated successfully!");
+      navigate(redirectTo);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // If password reset recovery, show password update form
+  if (isPasswordReset) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl font-serif">Set New Password</CardTitle>
+            <CardDescription>Enter your new password below</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div>
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating password...
+                  </>
+                ) : (
+                  "Update Password"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -129,9 +245,10 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="reset">Reset</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
@@ -204,6 +321,35 @@ const Auth = () => {
                     </>
                   ) : (
                     "Create Account"
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="reset">
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <div>
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                    required
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Enter your email address and we'll send you a link to reset your password.
+                </p>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending email...
+                    </>
+                  ) : (
+                    "Send Reset Link"
                   )}
                 </Button>
               </form>
