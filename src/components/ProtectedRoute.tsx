@@ -15,49 +15,87 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout | null = null;
+    let authCheckInProgress = false;
 
     const checkAuthAndRole = async () => {
+      // Prevent concurrent checks
+      if (authCheckInProgress) {
+        console.log("Auth check already in progress, skipping");
+        return;
+      }
+
+      authCheckInProgress = true;
+      const startTime = Date.now();
+
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get session with a reasonable timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Session check timeout")), 5000)
+        );
+
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (!mounted) return;
+
+        console.log(`Session check took ${Date.now() - startTime}ms`);
 
         if (error) {
           console.error("Auth check error:", error);
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
+          authCheckInProgress = false;
           return;
         }
 
         if (!session) {
+          console.log("No session found");
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
+          authCheckInProgress = false;
           return;
         }
 
+        console.log("Session found for user:", session.user.id);
         setIsAuthenticated(true);
 
         // If no role required, we're done
         if (!requiredRole) {
           setHasRole(true);
           setIsLoading(false);
+          authCheckInProgress = false;
           return;
         }
 
-        // Check role with timeout protection
+        // Check role with optimized query
+        const roleCheckStart = Date.now();
         let userHasRole = false;
         
         try {
-          // Query user_roles directly
-          const { data: roles, error: roleError } = await supabase
+          // Single optimized query with timeout
+          const rolePromise = supabase
             .from("user_roles")
             .select("role")
-            .eq("user_id", session.user.id);
+            .eq("user_id", session.user.id)
+            .limit(5);
+
+          const roleTimeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Role check timeout")), 3000)
+          );
+
+          const { data: roles, error: roleError } = await Promise.race([
+            rolePromise,
+            roleTimeoutPromise
+          ]) as any;
 
           if (!mounted) return;
+
+          console.log(`Role check took ${Date.now() - roleCheckStart}ms`);
 
           if (roleError) {
             console.error("Role query error:", roleError);
@@ -67,27 +105,30 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
             userHasRole = roles.some(
               (r) => r.role === requiredRole || (requiredRole === 'kitchen' && r.role === 'admin')
             );
-            console.log("User roles:", roles, "Required:", requiredRole, "Has access:", userHasRole);
+            console.log(`User has roles: [${roles.map(r => r.role).join(', ')}], Required: ${requiredRole}, Access: ${userHasRole}`);
           } else {
-            // No roles found - try bootstrap for admin
+            console.log("No roles found for user");
+            // Try bootstrap for admin only if no roles exist
             if (requiredRole === 'admin') {
               try {
-                const { data: granted } = await supabase.rpc('bootstrap_admin');
-                if (granted === true) {
-                  // Re-check roles after bootstrap
-                  const { data: rolesAfter } = await supabase
-                    .from('user_roles')
-                    .select('role')
-                    .eq('user_id', session.user.id);
-                  userHasRole = rolesAfter?.some((r) => r.role === 'admin') ?? false;
+                console.log("Attempting admin bootstrap...");
+                const { data: granted, error: bootstrapError } = await supabase.rpc('bootstrap_admin');
+                
+                if (bootstrapError) {
+                  console.error("Bootstrap error:", bootstrapError);
+                } else if (granted === true) {
+                  console.log("Admin role bootstrapped successfully");
+                  userHasRole = true;
+                } else {
+                  console.log("Bootstrap denied - admin already exists");
                 }
               } catch (e) {
-                console.error('Bootstrap admin failed:', e);
+                console.error('Bootstrap admin exception:', e);
               }
             }
           }
-        } catch (e) {
-          console.error("Role check exception:", e);
+        } catch (e: any) {
+          console.error("Role check exception:", e.message || e);
           userHasRole = false;
         }
         
@@ -95,39 +136,36 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
           setHasRole(userHasRole);
           setIsLoading(false);
         }
-      } catch (e) {
-        console.error("Auth/Role check error:", e);
+      } catch (e: any) {
+        console.error("Auth/Role check error:", e.message || e);
         if (mounted) {
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
         }
+      } finally {
+        authCheckInProgress = false;
       }
     };
-
-    // Clear any existing timeout
-    if (timeoutId) clearTimeout(timeoutId);
-
-    // Set a timeout failsafe (10 seconds max)
-    timeoutId = setTimeout(() => {
-      if (mounted && isLoading) {
-        console.error("Auth check timeout - forcing completion");
-        setIsLoading(false);
-      }
-    }, 10000);
 
     // Initial check
     checkAuthAndRole();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      checkAuthAndRole();
+      console.log("Auth state changed:", event);
+      
+      // Debounce rapid auth changes
+      setTimeout(() => {
+        if (mounted) {
+          checkAuthAndRole();
+        }
+      }, 100);
     });
 
     return () => {
       mounted = false;
-      if (timeoutId) clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [requiredRole]);
