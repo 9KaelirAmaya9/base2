@@ -122,7 +122,12 @@ Deno.serve(async (req) => {
       );
 
       if (!twilioResponse.ok) {
-        console.error('Twilio error:', await twilioResponse.text());
+        const errorData = await twilioResponse.json().catch(() => ({}));
+        console.error('Twilio API error:', { 
+          status: twilioResponse.status,
+          code: errorData.code || 'unknown',
+          message: errorData.message || 'API call failed'
+        });
       } else {
         console.log('SMS sent successfully');
       }
@@ -160,7 +165,11 @@ Deno.serve(async (req) => {
       });
 
       if (!resendResponse.ok) {
-        console.error('Resend error:', await resendResponse.text());
+        const errorData = await resendResponse.json().catch(() => ({}));
+        console.error('Resend API error:', { 
+          status: resendResponse.status,
+          type: errorData.type || 'unknown'
+        });
       } else {
         console.log('Email sent successfully');
       }

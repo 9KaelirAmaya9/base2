@@ -158,15 +158,18 @@ const Cart = () => {
     if (orderType === "delivery") {
       // Use Google Maps validation if place_id is available, otherwise fallback to text validation
       if (selectedPlace?.place_id) {
-        console.log("🔍 Cart: Validating delivery address with Google Maps place_id:", selectedPlace.place_id);
-        console.log("🔍 Cart: Formatted address:", selectedPlace.formatted_address);
+        if (import.meta.env.DEV) {
+          console.log("🔍 Cart: Validating delivery address with Google Maps");
+        }
         
         // Run validation in background - don't await, just fire and forget
         validateDeliveryAddressGoogle(
           selectedPlace.place_id,
           selectedPlace.formatted_address
         ).then((deliveryValidation) => {
-          console.log("✅ Cart: Google Maps delivery validation result:", deliveryValidation);
+          if (import.meta.env.DEV) {
+            console.log("✅ Cart: Delivery validation completed");
+          }
           
           // Only show error if explicitly invalid (not timeout)
           if (deliveryValidation && !deliveryValidation.isValid && 
@@ -316,52 +319,40 @@ const Cart = () => {
         status: "pending",
       };
       
-      console.log("💾 Order data prepared:", {
-        order_number: orderDataToInsert.order_number,
-        items_count: cart.length,
-        total: orderDataToInsert.total,
-        order_type: orderDataToInsert.order_type
-      });
+      const isDev = import.meta.env.DEV;
+      if (isDev) {
+        console.log("💾 Order data prepared:", {
+          order_number: orderDataToInsert.order_number,
+          items_count: cart.length,
+          total: orderDataToInsert.total,
+          order_type: orderDataToInsert.order_type
+        });
+      }
       
-      // Create insert promise with explicit error handling and connection test
+      // Create insert promise with explicit error handling
       const orderInsertPromise = (async () => {
         try {
-          console.log("🔄 Starting database insert...");
-          console.log("🔍 Testing Supabase connection first...");
-          
-          // Quick connection test - try to count orders (should be fast)
-          const connectionTest = await Promise.race([
-            supabase.from("orders").select("id", { count: "exact", head: true }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Connection test timeout")), 3000))
-          ]);
-          
-          console.log("✅ Connection test passed");
-          
-          // Now try the actual insert
-          console.log("💾 Attempting order insert...");
-          const insertStartTime = Date.now();
+          if (isDev) console.log("🔄 Starting database insert...");
           
           const result = await supabase
             .from("orders")
             .insert([orderDataToInsert]);
           
-          const insertDuration = Date.now() - insertStartTime;
-          
-          console.log("📦 Insert completed:", {
-            duration: `${insertDuration}ms`,
-            hasError: !!result.error,
-            errorMessage: result.error?.message,
-            errorCode: result.error?.code,
-            errorDetails: result.error?.details
-          });
+          if (isDev) {
+            console.log("📦 Insert completed:", {
+              hasError: !!result.error,
+              errorCode: result.error?.code
+            });
+          }
           
           return result;
         } catch (insertError: any) {
-          console.error("❌ Insert exception:", {
-            message: insertError?.message,
-            name: insertError?.name,
-            stack: insertError?.stack
-          });
+          if (isDev) {
+            console.error("❌ Insert exception:", {
+              message: insertError?.message,
+              name: insertError?.name
+            });
+          }
           return {
             data: null,
             error: {
