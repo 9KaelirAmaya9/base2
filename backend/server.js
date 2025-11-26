@@ -5,6 +5,8 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
+const menuRoutes = require('./routes/menu');
+const orderRoutes = require('./routes/orders');
 const { pool } = require('./config/database');
 
 const app = express();
@@ -32,6 +34,8 @@ app.use('/api/', limiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/menu', menuRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -68,20 +72,26 @@ app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════╗
 ║                                                      ║
-║  🚀 Base2 Backend Server                            ║
+║  🌮 Base2 Taco Restaurant Backend                   ║
 ║                                                      ║
 ║  Server running on: http://localhost:${PORT}         ║
 ║  Environment: ${process.env.NODE_ENV || 'development'}                          ║
 ║                                                      ║
-║  Available routes:                                   ║
+║  Auth Routes:                                        ║
 ║  - POST   /api/auth/register                        ║
 ║  - POST   /api/auth/login                           ║
-║  - GET    /api/auth/verify-email/:token             ║
-║  - POST   /api/auth/resend-verification             ║
-║  - POST   /api/auth/forgot-password                 ║
-║  - POST   /api/auth/reset-password/:token           ║
 ║  - GET    /api/auth/me                              ║
-║  - POST   /api/auth/google                          ║
+║                                                      ║
+║  Menu Routes (Public):                               ║
+║  - GET    /api/menu                                 ║
+║  - GET    /api/menu/items                           ║
+║                                                      ║
+║  Order Routes:                                       ║
+║  - POST   /api/orders (Public)                      ║
+║  - GET    /api/orders/list/active (Kitchen)         ║
+║  - PATCH  /api/orders/:id/status (Kitchen)          ║
+║  - GET    /api/orders (Admin)                       ║
+║                                                      ║
 ║  - GET    /api/health                               ║
 ║                                                      ║
 ╚══════════════════════════════════════════════════════╝

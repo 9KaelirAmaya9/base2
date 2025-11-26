@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 const Navigation = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
+  const { getCartItemCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,48 +15,98 @@ const Navigation = () => {
   };
 
   const isActive = (path) => location.pathname === path;
+  const cartCount = getCartItemCount();
 
   return (
     <nav style={styles.nav}>
       <div style={styles.container}>
-        <Link to="/dashboard" style={styles.logo}>
-          <span style={styles.logoIcon}>🚀</span>
-          Base2
+        <Link to="/" style={styles.logo}>
+          <span style={styles.logoIcon}>🌮</span>
+          Base2 Tacos
         </Link>
 
         <div style={styles.menu}>
-          <Link 
-            to="/dashboard" 
+          <Link
+            to="/menu"
             style={{
               ...styles.menuItem,
-              ...(isActive('/dashboard') && styles.menuItemActive)
+              ...(isActive('/menu') && styles.menuItemActive)
             }}
           >
-            Dashboard
+            Menu
           </Link>
-          <Link 
-            to="/settings" 
+          <Link
+            to="/location"
             style={{
               ...styles.menuItem,
-              ...(isActive('/settings') && styles.menuItemActive)
+              ...(isActive('/location') && styles.menuItemActive)
             }}
           >
-            Settings
+            Location
           </Link>
+
+          {/* Role-based navigation */}
+          {isAuthenticated && user?.role === 'ADMIN' && (
+            <Link
+              to="/admin"
+              style={{
+                ...styles.menuItem,
+                ...(isActive('/admin') && styles.menuItemActive)
+              }}
+            >
+              Admin
+            </Link>
+          )}
+          {isAuthenticated && (user?.role === 'KITCHEN' || user?.role === 'ADMIN') && (
+            <Link
+              to="/kitchen"
+              style={{
+                ...styles.menuItem,
+                ...(isActive('/kitchen') && styles.menuItemActive)
+              }}
+            >
+              Kitchen
+            </Link>
+          )}
+          {isAuthenticated && !user?.role && (
+            <Link
+              to="/dashboard"
+              style={{
+                ...styles.menuItem,
+                ...(isActive('/dashboard') && styles.menuItemActive)
+              }}
+            >
+              Dashboard
+            </Link>
+          )}
         </div>
 
         <div style={styles.userSection}>
-          <div style={styles.userInfo}>
-            <img 
-              src={user?.picture || 'https://via.placeholder.com/40'} 
-              alt="Profile" 
-              style={styles.avatar}
-            />
-            <span style={styles.userName}>{user?.name}</span>
-          </div>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            Logout
-          </button>
+          {cartCount > 0 && (
+            <Link to="/cart" style={styles.cartButton}>
+              🛒 Cart ({cartCount})
+            </Link>
+          )}
+
+          {isAuthenticated ? (
+            <>
+              <div style={styles.userInfo}>
+                <img
+                  src={user?.picture || 'https://via.placeholder.com/40'}
+                  alt="Profile"
+                  style={styles.avatar}
+                />
+                <span style={styles.userName}>{user?.name}</span>
+              </div>
+              <button onClick={handleLogout} style={styles.logoutButton}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/" style={styles.loginButton}>
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </nav>
@@ -138,6 +190,26 @@ const styles = {
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  cartButton: {
+    padding: '8px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: 'white',
+    background: '#667eea',
+    textDecoration: 'none',
+    borderRadius: '6px',
+    transition: 'all 0.2s'
+  },
+  loginButton: {
+    padding: '8px 20px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: 'white',
+    background: '#667eea',
+    textDecoration: 'none',
+    borderRadius: '6px',
     transition: 'all 0.2s'
   }
 };
