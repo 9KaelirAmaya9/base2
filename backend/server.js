@@ -5,6 +5,8 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
+const contractRoutes = require('./routes/contracts');
+const dashboardRoutes = require('./routes/dashboards');
 const { pool } = require('./config/database');
 
 const app = express();
@@ -32,6 +34,8 @@ app.use('/api/', limiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/contracts', contractRoutes);
+app.use('/api/dashboards', dashboardRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
