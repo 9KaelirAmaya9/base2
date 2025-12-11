@@ -185,7 +185,7 @@ const Auth = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth?type=recovery`,
+        redirectTo: `${window.location.origin}/auth`,
       });
 
       if (error) throw error;
@@ -215,30 +215,33 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      // First verify we have a session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Session expired. Please request a new password reset link.");
-        setIsPasswordReset(false);
-        return;
-      }
-
+      // Don't check session - just attempt the update
+      // Supabase handles the recovery token internally
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Password update error:", error);
+        if (error.message?.includes("Auth session missing") || error.message?.includes("session")) {
+          toast.error("Reset link expired. Please request a new password reset link.");
+          setIsPasswordReset(false);
+          setSessionReady(false);
+          // Clear the hash from URL
+          window.history.replaceState(null, '', window.location.pathname);
+        } else {
+          toast.error(error.message || "Failed to update password");
+        }
+        return;
+      }
       
       toast.success("Password updated successfully!");
+      // Clear the hash from URL before navigating
+      window.history.replaceState(null, '', window.location.pathname);
       navigate(redirectTo);
     } catch (error: any) {
-      console.error("Password update error:", error);
-      if (error.message?.includes("session")) {
-        toast.error("Session expired. Please request a new password reset link.");
-        setIsPasswordReset(false);
-      } else {
-        toast.error(error.message || "Failed to update password");
-      }
+      console.error("Password update exception:", error);
+      toast.error(error.message || "Failed to update password");
     } finally {
       setIsLoading(false);
     }
