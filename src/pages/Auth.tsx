@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordReset, setIsPasswordReset] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
+  const sessionReadyRef = useRef(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
@@ -26,6 +27,7 @@ const Auth = () => {
     // Check URL hash for recovery token (Supabase uses hash fragments)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get("type") || searchParams.get("type");
+    const accessToken = hashParams.get("access_token");
     const isRecovery = type === "recovery";
     
     // If URL indicates recovery, show loading state immediately
@@ -41,6 +43,7 @@ const Auth = () => {
         // User clicked the recovery link - show password update form
         setIsPasswordReset(true);
         setSessionReady(true);
+        sessionReadyRef.current = true;
         return;
       }
       
@@ -48,6 +51,7 @@ const Auth = () => {
         // Recovery session established
         setIsPasswordReset(true);
         setSessionReady(true);
+        sessionReadyRef.current = true;
         return;
       }
       
@@ -63,9 +67,15 @@ const Auth = () => {
           // Session exists and this is a recovery flow
           setIsPasswordReset(true);
           setSessionReady(true);
+          sessionReadyRef.current = true;
         } else {
           navigate(redirectTo);
         }
+      } else if (isRecovery && accessToken) {
+        // We have a recovery token in URL but no session yet
+        // Supabase should establish the session automatically
+        // Just wait for the auth state change
+        console.log("Recovery token present, waiting for session...");
       }
     });
 
@@ -73,12 +83,13 @@ const Auth = () => {
     let timeoutId: NodeJS.Timeout | undefined;
     if (isRecovery) {
       timeoutId = setTimeout(() => {
-        if (!sessionReady) {
+        // Use ref to get current value, not stale closure
+        if (!sessionReadyRef.current) {
           toast.error("Reset link expired or invalid. Please request a new one.");
           setIsPasswordReset(false);
           setSessionReady(false);
         }
-      }, 5000);
+      }, 8000); // Increased timeout to 8 seconds
     }
 
     return () => {
