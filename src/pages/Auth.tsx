@@ -16,30 +16,76 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isPasswordReset, setIsPasswordReset] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
-  
-  // Check if this is a password reset callback
-  const isPasswordReset = searchParams.get("type") === "recovery";
 
   useEffect(() => {
+    // Check URL hash for recovery token (Supabase uses hash fragments)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get("type") || searchParams.get("type");
+    const isRecovery = type === "recovery";
+    
+    // If URL indicates recovery, show loading state immediately
+    if (isRecovery) {
+      setIsPasswordReset(true);
+    }
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && !isPasswordReset) {
+      console.log("Auth event:", event, "Session:", !!session);
+      
+      if (event === "PASSWORD_RECOVERY") {
+        // User clicked the recovery link - show password update form
+        setIsPasswordReset(true);
+        setSessionReady(true);
+        return;
+      }
+      
+      if (event === "SIGNED_IN" && isRecovery) {
+        // Recovery session established
+        setIsPasswordReset(true);
+        setSessionReady(true);
+        return;
+      }
+      
+      if (session && !isRecovery) {
         navigate(redirectTo);
       }
     });
 
     // THEN check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !isPasswordReset) {
-        navigate(redirectTo);
+      if (session) {
+        if (isRecovery) {
+          // Session exists and this is a recovery flow
+          setIsPasswordReset(true);
+          setSessionReady(true);
+        } else {
+          navigate(redirectTo);
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate, redirectTo, isPasswordReset]);
+    // Add timeout to handle cases where recovery session doesn't establish
+    let timeoutId: NodeJS.Timeout | undefined;
+    if (isRecovery) {
+      timeoutId = setTimeout(() => {
+        if (!sessionReady) {
+          toast.error("Reset link expired or invalid. Please request a new one.");
+          setIsPasswordReset(false);
+          setSessionReady(false);
+        }
+      }, 5000);
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [navigate, redirectTo, searchParams]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,6 +215,14 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
+      // First verify we have a session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expired. Please request a new password reset link.");
+        setIsPasswordReset(false);
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -178,14 +232,34 @@ const Auth = () => {
       toast.success("Password updated successfully!");
       navigate(redirectTo);
     } catch (error: any) {
-      toast.error(error.message || "Failed to update password");
+      console.error("Password update error:", error);
+      if (error.message?.includes("session")) {
+        toast.error("Session expired. Please request a new password reset link.");
+        setIsPasswordReset(false);
+      } else {
+        toast.error(error.message || "Failed to update password");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // If password reset recovery, show password update form
-  if (isPasswordReset) {
+  // Show loading while checking for recovery session
+  if (isPasswordReset && !sessionReady) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Verifying reset link...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // If password reset recovery and session is ready, show password update form
+  if (isPasswordReset && sessionReady) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
