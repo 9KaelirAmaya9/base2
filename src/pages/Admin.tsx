@@ -179,6 +179,13 @@ const Admin = () => {
       color: "bg-blue-500 hover:bg-blue-600"
     },
     {
+      title: "Analytics Dashboard",
+      description: "Revenue and insights",
+      icon: TrendingUp,
+      onClick: () => navigate("/admin/analytics"),
+      color: "bg-green-500 hover:bg-green-600"
+    },
+    {
       title: "Manage Roles",
       description: "User permissions",
       icon: Users,
