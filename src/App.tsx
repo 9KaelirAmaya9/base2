@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ConditionalFloatingButtons } from "@/components/ConditionalFloatingButtons";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import "@/utils/adminDiagnostics"; // Load admin diagnostics utility
 import Index from "./pages/Index";
 import Menu from "./pages/Menu";
 import Order from "./pages/Order";

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -15,16 +15,16 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
   useEffect(() => {
     let mounted = true;
-    const authCheckInProgress = useRef(false);
+    let authCheckInProgress = false;
 
     const checkAuthAndRole = async () => {
       // Prevent concurrent checks
-      if (authCheckInProgress.current) {
+      if (authCheckInProgress) {
         console.log("Auth check already in progress, skipping");
         return;
       }
 
-      authCheckInProgress.current = true;
+      authCheckInProgress = true;
       const startTime = Date.now();
 
       try {
@@ -40,7 +40,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
-          authCheckInProgress.current = false;
+          authCheckInProgress = false;
           return;
         }
 
@@ -49,7 +49,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
-          authCheckInProgress.current = false;
+          authCheckInProgress = false;
           return;
         }
 
@@ -60,7 +60,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
         if (!requiredRole) {
           setHasRole(true);
           setIsLoading(false);
-          authCheckInProgress.current = false;
+          authCheckInProgress = false;
           return;
         }
 
@@ -97,62 +97,46 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
             userHasRole = roles.some(
               (r) => r.role === requiredRole || (requiredRole === 'kitchen' && r.role === 'admin')
             );
-            console.log(`✅ User has roles: [${roles.map(r => r.role).join(', ')}], Required: ${requiredRole}, Access: ${userHasRole ? 'GRANTED' : 'DENIED'}`);
-
-            if (!userHasRole) {
-              console.error(`❌ ACCESS DENIED: User has roles [${roles.map(r => r.role).join(', ')}] but needs '${requiredRole}' role`);
-            }
+            console.log(`User has roles: [${roles.map(r => r.role).join(', ')}], Required: ${requiredRole}, Access: ${userHasRole}`);
           } else {
-            console.warn("⚠️ No roles found for user - attempting bootstrap for admin...");
+            console.log("No roles found for user");
             // Try bootstrap for admin only if no roles exist
             if (requiredRole === 'admin') {
               try {
-                console.log("🔄 Attempting admin bootstrap...");
-                const bootstrapStart = Date.now();
+                console.log("Attempting admin bootstrap...");
                 const { data: granted, error: bootstrapError } = await supabase.rpc('bootstrap_admin');
-                const bootstrapDuration = Date.now() - bootstrapStart;
-
+                
                 if (bootstrapError) {
-                  console.error("❌ Bootstrap error:", bootstrapError);
-                  console.error("💡 This user cannot be made admin. An admin must grant the role via SQL or Admin UI.");
+                  console.error("Bootstrap error:", bootstrapError);
                 } else if (granted === true) {
-                  console.log(`✅ 🎉 Admin role bootstrapped successfully! (took ${bootstrapDuration}ms)`);
-                  console.log("💡 You are now an admin! Refresh the page to access admin features.");
+                  console.log("Admin role bootstrapped successfully");
                   userHasRole = true;
                 } else {
-                  console.warn(`⚠️ Bootstrap denied - an admin already exists in the system (took ${bootstrapDuration}ms)`);
-                  console.error("❌ SOLUTION: You need an existing admin to grant you the admin role, or run this SQL:");
-                  console.error(`   INSERT INTO public.user_roles (user_id, role) VALUES ('${session.user.id}', 'admin');`);
+                  console.log("Bootstrap denied - admin already exists");
                 }
               } catch (e) {
-                console.error('❌ Bootstrap admin exception:', e);
+                console.error('Bootstrap admin exception:', e);
               }
-            } else {
-              console.error(`❌ No roles found and required role is '${requiredRole}' (not admin, so no bootstrap available)`);
-              console.error("💡 SOLUTION: An admin must grant you the '${requiredRole}' role");
             }
           }
         } catch (e: any) {
-          console.error("❌ Role check exception:", e.message || e);
+          console.error("Role check exception:", e.message || e);
           userHasRole = false;
         }
-
+        
         if (mounted) {
-          console.log(`🔒 Final auth result: isAuthenticated=${true}, hasRole=${userHasRole}, requiredRole=${requiredRole}`);
           setHasRole(userHasRole);
           setIsLoading(false);
         }
       } catch (e: any) {
-        console.error("❌ Auth/Role check error:", e.message || e);
+        console.error("Auth/Role check error:", e.message || e);
         if (mounted) {
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
         }
       } finally {
-        const totalDuration = Date.now() - startTime;
-        console.log(`⏱️ Total auth check duration: ${totalDuration}ms`);
-        authCheckInProgress.current = false;
+        authCheckInProgress = false;
       }
     };
 
