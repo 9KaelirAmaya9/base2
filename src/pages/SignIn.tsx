@@ -20,21 +20,11 @@ const SignIn = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         console.log("Session loaded:", session.user.email);
-        // Force redirect to dashboard
-        window.location.href = "/dashboard";
+        // Force immediate redirect using replace to prevent back-button issues
+        window.location.replace("/dashboard");
       }
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("SignIn auth event:", event, "Session:", !!session);
-      if (event === 'SIGNED_IN' && session) {
-        // Force redirect to dashboard on sign in
-        window.location.href = "/dashboard";
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +38,10 @@ const SignIn = () => {
 
       if (error) throw error;
 
-      toast.success("Signed in successfully!");
-      // Force redirect - don't rely on React Router
-      window.location.href = "/dashboard";
+      console.log("✅ Sign in successful, redirecting to dashboard...");
+      // Use replace() for immediate, synchronous redirect that can't be interrupted
+      // This executes before any React lifecycle events can unmount the component
+      window.location.replace("/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in");
       setIsLoading(false);

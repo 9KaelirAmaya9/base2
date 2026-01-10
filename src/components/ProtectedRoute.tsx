@@ -20,23 +20,36 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
     const checkAuthAndRole = async () => {
       // Prevent concurrent checks
       if (authCheckInProgress.current) {
-        console.log("Auth check already in progress, skipping");
+        console.log("⚠️ Auth check already in progress, skipping");
         return;
       }
 
       authCheckInProgress.current = true;
       const startTime = Date.now();
+      console.log("🔍 Starting auth check...");
+
+      // Failsafe: reset flag after 10 seconds no matter what
+      const failsafeTimeout = setTimeout(() => {
+        if (authCheckInProgress.current) {
+          console.error("⚠️ Auth check timeout failsafe triggered - forcing flag reset");
+          authCheckInProgress.current = false;
+        }
+      }, 10000);
 
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
 
-        
-        if (!mounted) return;
 
-        console.log(`Session check took ${Date.now() - startTime}ms`);
+        if (!mounted) {
+          console.log("⚠️ Component unmounted, stopping auth check");
+          authCheckInProgress.current = false;
+          return;
+        }
+
+        console.log(`✅ Session check took ${Date.now() - startTime}ms`);
 
         if (error) {
-          console.error("Auth check error:", error);
+          console.error("❌ Auth check error:", error);
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
@@ -45,7 +58,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
         }
 
         if (!session) {
-          console.log("No session found");
+          console.log("❌ No session found");
           setIsAuthenticated(false);
           setHasRole(false);
           setIsLoading(false);
@@ -85,7 +98,11 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
             roleTimeoutPromise
           ]) as any;
 
-          if (!mounted) return;
+          if (!mounted) {
+            console.log("⚠️ Component unmounted during role check");
+            authCheckInProgress.current = false;
+            return;
+          }
 
           console.log(`Role check took ${Date.now() - roleCheckStart}ms`);
 
@@ -150,8 +167,10 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
           setIsLoading(false);
         }
       } finally {
+        clearTimeout(failsafeTimeout);
         const totalDuration = Date.now() - startTime;
         console.log(`⏱️ Total auth check duration: ${totalDuration}ms`);
+        console.log(`✅ Resetting authCheckInProgress flag`);
         authCheckInProgress.current = false;
       }
     };
