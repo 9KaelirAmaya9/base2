@@ -85,7 +85,8 @@ export default function AdminAnalytics() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders((data as Order[]) || []);
+      // Cast through unknown since Supabase Json type doesn't directly match our Order type
+      setOrders((data as unknown as Order[]) || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
       setOrders([]);

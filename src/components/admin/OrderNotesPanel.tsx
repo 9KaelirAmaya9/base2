@@ -79,17 +79,17 @@ export function OrderNotesPanel({ orderId }: OrderNotesPanelProps) {
       const notesData = (data as OrderNote[]) || [];
       setNotes(notesData);
 
-      // Fetch user profiles for note authors
+      // Fetch user profiles for note authors from the profiles table
       const userIds = [...new Set(notesData.map((note) => note.user_id))];
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from("user_profiles")
-          .select("id, user_name")
-          .in("id", userIds);
+          .from("profiles")
+          .select("user_id, name")
+          .in("user_id", userIds);
 
         const profileMap = new Map<string, string>();
-        (profiles as UserProfile[] || []).forEach((profile) => {
-          profileMap.set(profile.id, profile.user_name || "Unknown User");
+        (profiles || []).forEach((profile) => {
+          profileMap.set(profile.user_id, profile.name || "Unknown User");
         });
         setUserProfiles(profileMap);
       }

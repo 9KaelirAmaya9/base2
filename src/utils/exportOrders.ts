@@ -1,4 +1,8 @@
 import { format } from "date-fns";
+import type { Tables } from "@/integrations/supabase/types";
+
+// Use the Supabase order type directly
+type Order = Tables<"orders">;
 
 interface OrderItem {
   name: string;
@@ -6,22 +10,12 @@ interface OrderItem {
   price: number;
 }
 
-interface Order {
-  id: string;
-  order_number: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email: string | null;
-  order_type: string;
-  status: string;
-  items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  delivery_address: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
+// Helper to safely get items as array
+function getItems(items: unknown): OrderItem[] {
+  if (Array.isArray(items)) {
+    return items as OrderItem[];
+  }
+  return [];
 }
 
 export function exportToCSV(orders: Order[], filename?: string) {
@@ -50,15 +44,12 @@ export function exportToCSV(orders: Order[], filename?: string) {
 
   // Convert orders to CSV rows
   const rows = orders.map((order) => {
-    const itemsList = Array.isArray(order.items)
-      ? order.items
-          .map((item) => `${item.name} (${item.quantity}x)`)
-          .join("; ")
-      : "";
+    const itemsArray = getItems(order.items);
+    const itemsList = itemsArray
+      .map((item) => `${item.name} (${item.quantity}x)`)
+      .join("; ");
 
-    const totalQuantity = Array.isArray(order.items)
-      ? order.items.reduce((sum, item) => sum + item.quantity, 0)
-      : 0;
+    const totalQuantity = itemsArray.reduce((sum, item) => sum + item.quantity, 0);
 
     return [
       order.order_number,
